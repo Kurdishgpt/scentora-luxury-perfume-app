@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, ShoppingBag, Home, Sparkles, Layers, Heart, User, Star, Share2,
-  Citrus, Flower2, TreePine, Droplets, Flame, Clock, Wind, Users, ChevronRight, Minus, Plus, Search, Trash2,
+  ArrowDownRight, ArrowRight, ArrowUpRight, Check, Clock3, Citrus, Droplets, Flame,
+  Flower2, Heart, Info, Leaf, Minus, Plus, Search, ShoppingBag, Sparkles, Star,
+  Trash2, TreePine, Wind, X,
 } from "lucide-react";
 import hero from "@/assets/hero-bottle.jpg";
 import oud from "@/assets/oud-wood.jpg";
@@ -10,304 +11,535 @@ import rose from "@/assets/rosewater.jpg";
 import bokeh from "@/assets/bokeh-bg.jpg";
 
 export const WHATSAPP_NUMBER = "9647701575609";
-export const SIZES = [20, 100, 250, 500] as const;
-type Size = (typeof SIZES)[number];
 
-const PRODUCTS = {
-  oud: { name: "عوود وود", img: oud, prices: { 20: 25, 100: 95, 250: 210, 500: 390 } as Record<Size, number> },
-  rose: { name: "ڕۆزواتەر", img: rose, prices: { 20: 20, 100: 80, 250: 180, 500: 330 } as Record<Size, number> },
+type Language = "en" | "ku" | "ar";
+type Category = "Citrus" | "Floral" | "Woody" | "Oriental" | "Fresh" | "Spicy";
+type Size = 30 | 50 | 100;
+type ProductId = "oud" | "rose" | "amber";
+type Product = {
+  id: ProductId;
+  name: string;
+  image: string;
+  subtitle: string;
+  categories: Category[];
+  price: Record<Size, number>;
+  rating: number;
+  reviews: number;
+  tag: string;
+  top: string;
+  heart: string;
+  base: string;
+  longevity: string;
+  projection: string;
+  description: string;
 };
-type PId = keyof typeof PRODUCTS;
-type Line = { id: PId; size: Size; q: number };
-const SHIPPING = 8.5;
+type CartLine = { id: ProductId; size: Size; quantity: number };
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "سێنتۆرا — بۆنی بەناوبانگ" },
-      { name: "description", content: "سێنتۆرا: بۆنی لوکس بە گرام بکڕە — ٢٠، ١٠٠، ٢٥٠ و ٥٠٠ گرام، داواکاری بە واتسئاپ." },
-      { property: "og:title", content: "سێنتۆرا — بۆنی بەناوبانگ" },
-      { property: "og:description", content: "جەوهەری خۆت بدۆزەرەوە. بۆنی لوکس بە گرام." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap" },
-    ],
-  }),
-  component: Index,
-});
+const SIZES: Size[] = [30, 50, 100];
+const PRODUCTS: Product[] = [
+  {
+    id: "oud", name: "Oud Wood", image: oud, subtitle: "Smoky woods · quiet confidence",
+    categories: ["Woody", "Spicy"], price: { 30: 45, 50: 88, 100: 145 }, rating: 4.9, reviews: 128,
+    tag: "House favourite", top: "Cardamom · pink pepper", heart: "Oud · sandalwood",
+    base: "Vetiver · tonka bean", longevity: "8–10 hours", projection: "Intimate, then assured",
+    description: "A slow-burning composition of rare oud and polished woods. Warm, textured, and impossible to mistake for anyone else.",
+  },
+  {
+    id: "rose", name: "Rosewater", image: rose, subtitle: "Petal-soft · luminous",
+    categories: ["Floral", "Fresh", "Citrus"], price: { 30: 38, 50: 74, 100: 126 }, rating: 4.8, reviews: 94,
+    tag: "A softer ritual", top: "Bergamot · pear", heart: "Damask rose · peony",
+    base: "White musk · cedar", longevity: "6–8 hours", projection: "A graceful halo",
+    description: "Freshly gathered rose petals meet a clean, airy musk. An understated floral with a little light in every layer.",
+  },
+  {
+    id: "amber", name: "Amber Royal", image: hero, subtitle: "Golden amber · velvet spice",
+    categories: ["Oriental", "Spicy", "Citrus"], price: { 30: 52, 50: 102, 100: 168 }, rating: 4.7, reviews: 76,
+    tag: "The evening edit", top: "Saffron · mandarin", heart: "Amber · jasmine",
+    base: "Vanilla · labdanum", longevity: "9–12 hours", projection: "Rich, beautifully lasting",
+    description: "A luminous amber accord wrapped in saffron and soft vanilla. Made for the last light and the stories that follow.",
+  },
+];
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const CATEGORY_META: { name: Category; Icon: typeof Citrus; ku: string; ar: string }[] = [
+  { name: "Citrus", Icon: Citrus, ku: "ترش", ar: "حمضيات" },
+  { name: "Floral", Icon: Flower2, ku: "گوڵاوی", ar: "زهري" },
+  { name: "Woody", Icon: TreePine, ku: "داری", ar: "خشبي" },
+  { name: "Oriental", Icon: Sparkles, ku: "ڕۆژهەڵاتی", ar: "شرقي" },
+  { name: "Fresh", Icon: Droplets, ku: "تازە", ar: "منعش" },
+  { name: "Spicy", Icon: Flame, ku: "بەهاراتی", ar: "متبّل" },
+];
 
-function Logo({ size = 40 }: { size?: number }) {
+const COPY = {
+  en: {
+    navCollection: "The collection", navStory: "Our philosophy", navNotes: "The notes",
+    search: "Search fragrances", wishlist: "Wishlist", cart: "Shopping bag",
+    kicker: "A fragrance, remembered", headlineA: "Discover Your", headlineB: "Signature Scent",
+    description: "Rare compositions. A little ceremony. Find the fragrance that feels like it has always been yours.",
+    explore: "Explore Scents", heroNote: "Curated in Kurdistan", allScents: "All scents",
+    collectionEyebrow: "A considered collection", collectionTitle: "Find your note.",
+    collectionDesc: "Follow a feeling, not a trend. Each scent is chosen to become part of your own story.",
+    fragrances: "fragrances", favourites: "Saved scents only", clearFilters: "Clear filters",
+    add: "Add to bag", added: "Added to your bag", details: "Discover fragrance",
+    cardOrder: "Order via WhatsApp",
+    volume: "Volume", rating: "Customer rating", notes: "The composition",
+    top: "Top", heart: "Heart", base: "Base", longevity: "Longevity", projection: "Projection",
+    detailAdd: "Add to bag", browse: "Continue discovering", bagTitle: "Your bag",
+    bagEmpty: "A beautiful beginning.", bagEmptyText: "Your bag is waiting for something unforgettable.",
+    subtotal: "Subtotal", delivery: "Delivery", total: "Total", checkout: "Order via WhatsApp",
+    name: "Your name", address: "Delivery address", remove: "Remove item", increase: "Increase quantity",
+    decrease: "Decrease quantity", close: "Close", storyEyebrow: "The Maya point of view",
+    storyTitleA: "Scent is a", storyTitleB: "way back to you.",
+    storyText: "We believe the best fragrance is not the loudest thing in a room. It is the detail someone remembers after you have left. Maya Collection brings rare, characterful scents closer to home, chosen slowly and worn your own way.",
+    storySign: "With care, Maya", notesEyebrow: "A scent in three acts", notesTitle: "Made to unfold.",
+    notesDesc: "A fragrance is never a single note. It moves with you, changing gently as the hours pass.",
+    noteTopTitle: "The first impression", noteTopText: "Bright, fleeting notes introduce the fragrance and invite you closer.",
+    noteHeartTitle: "The true character", noteHeartText: "The heart opens slowly, revealing the personality at the centre of the scent.",
+    noteBaseTitle: "What remains", noteBaseText: "Warm, lasting accords settle into the skin and leave a beautiful trace.",
+    closingEyebrow: "Your next memory", closingTitle: "Let scent find you.", closingCta: "Find your fragrance",
+    footerLine: "Fragrance, chosen to feel like you.", copyright: "Maya Collection · Erbil, Iraq",
+    waItem: "Hello Maya Collection, I would like to order:",
+    freeDelivery: "Complimentary delivery on orders over $150",
+  },
+  ku: {
+    navCollection: "کۆمەڵەکە", navStory: "دیدگای ئێمە", navNotes: "نۆتەکان",
+    search: "گەڕان بەدوای بۆن", wishlist: "دڵخوازەکان", cart: "سەبەتە",
+    kicker: "بۆنێک کە لەبیر دەکرێت", headlineA: "کۆڵینەوە لە بۆنی", headlineB: "تایبەتی خۆت بکە",
+    description: "تێکەڵەی دەگمەن. ڕێوڕەسمێکی جوان. ئەو بۆنە بدۆزەرەوە کە هەمیشە هی خۆت بووە.",
+    explore: "دۆزینەوەی بۆنەکان", heroNote: "بە وردی هەڵبژێردراوە لە کوردستان",
+    allScents: "هەموو بۆنەکان", collectionEyebrow: "کۆمەڵەیەکی هەڵبژێردراو",
+    collectionTitle: "نۆتەکەت بدۆزەرەوە.", collectionDesc: "بەدوای هەستێکدا بگەڕێ، نەک ترێند. هەر بۆنێک دەکرێت ببێتە بەشێک لە چیرۆکی خۆت.",
+    fragrances: "بۆن", favourites: "تەنها دڵخوازەکان", clearFilters: "پاککردنەوەی فلتەر",
+    add: "زیادکردن بۆ سەبەتە", added: "زیادکرا بۆ سەبەتە", details: "ناسینی بۆن",
+    volume: "قەبارە", rating: "هەڵسەنگاندنی کڕیار", notes: "پێکهاتە",
+    top: "سەرەتا", heart: "ناوەڕاست", base: "بنەڕەت", longevity: "مانەوە", projection: "بڵاوبوونەوە",
+    detailAdd: "زیادکردن بۆ سەبەتە", browse: "بەردەوام بە لە دۆزینەوە", bagTitle: "سەبەتەکەت",
+    bagEmpty: "سەرەتایەکی جوان.", bagEmptyText: "سەبەتەکەت چاوەڕێی شتێکی لەبیرنەکراوە.",
+    subtotal: "کۆی بەرهەم", delivery: "گەیاندن", total: "کۆی گشتی", checkout: "پەیوەندی لە ڕێگەی واتسئاپ",
+    cardOrder: "پەیوەندی لە ڕێگەی واتسئاپ",
+    name: "ناوت", address: "ناونیشانی گەیاندن", remove: "لابردنی بەرهەم", increase: "زیادکردنی ژمارە",
+    decrease: "کەمکردنەوەی ژمارە", close: "داخستن", storyEyebrow: "دیدگای مایا",
+    storyTitleA: "بۆن، ڕێگایەکە", storyTitleB: "بۆ گەڕانەوە بۆ خۆت.",
+    storyText: "باوەڕمان وایە باشترین بۆن ئەوە نییە کە لە ژوورێکدا زۆرترین دەنگی هەبێت؛ ئەوەیە کە دوای ڕۆیشتنت لەبیر دەمێنێت. Maya Collection بۆنە دەگمەن و پڕ لە کەسایەتییەکان نزیکتر دەکاتەوە.",
+    storySign: "بە خۆشەویستی، مایا", notesEyebrow: "بۆنێک لە سێ بەشدا", notesTitle: "بۆ گەشەکردن دروستکراوە.",
+    notesDesc: "بۆن تەنها یەک نۆت نییە. لەگەڵ تۆ دەگۆڕێت و بە تێپەڕبوونی کات بە نەرمی دەکرێتەوە.",
+    noteTopTitle: "یەکەم هەست", noteTopText: "نۆتە درەوشاوە و کاتییەکان بۆنەکە دەناسێنن و بانگهێشتت دەکەن.",
+    noteHeartTitle: "کەسایەتیی ڕاستەقینە", noteHeartText: "ناوەڕاستی بۆن بە هێواشی دەکرێتەوە و سروشتی ناوەندی دەردەخات.",
+    noteBaseTitle: "ئەوەی دەمێنێتەوە", noteBaseText: "نۆتە گەرم و بەردەوامەکان لەسەر پێست جێگیر دەبن و شوێنێکی جوان دەمێنن.",
+    closingEyebrow: "بیرەوەریی داهاتووت", closingTitle: "با بۆنەکە دەت بدۆزێتەوە.",
+    closingCta: "بۆنی خۆت بدۆزەرەوە", footerLine: "بۆن، بە شێوەیەک هەڵبژێردراوە کە لەگەڵ تۆ بگونجێت.",
+    copyright: "Maya Collection · هەولێر، عێراق", waItem: "سڵاو Maya Collection، دەمەوێت ئەم بۆنانە داوا بکەم:",
+    freeDelivery: "گەیاندنی خۆڕایی بۆ داواکاری زیاتر لە $150",
+  },
+  ar: {
+    navCollection: "المجموعة", navStory: "رؤيتنا", navNotes: "النفحات",
+    search: "ابحث عن عطر", wishlist: "المفضلة", cart: "حقيبة التسوق",
+    kicker: "عطر يبقى في الذاكرة", headlineA: "اكتشف عطرك", headlineB: "المميّز",
+    description: "تركيبات نادرة، ولمسة من الطقوس الجميلة. اعثر على العطر الذي تشعر أنه كان لك دائماً.",
+    explore: "اكتشف العطور", heroNote: "مختارة بعناية في كردستان", allScents: "كل العطور",
+    collectionEyebrow: "مجموعة مختارة بعناية", collectionTitle: "اعثر على نفحتك.",
+    collectionDesc: "اتبع إحساسك لا صيحات الموضة. كل عطر مختار ليصبح جزءاً من قصتك.",
+    fragrances: "عطور", favourites: "المفضلة فقط", clearFilters: "مسح الفلاتر",
+    add: "أضف إلى الحقيبة", added: "أضيف إلى حقيبتك", details: "اكتشف العطر",
+    cardOrder: "اطلب عبر واتساب",
+    volume: "الحجم", rating: "تقييم العملاء", notes: "التركيبة",
+    top: "المقدمة", heart: "القلب", base: "القاعدة", longevity: "الثبات", projection: "الانتشار",
+    detailAdd: "أضف إلى الحقيبة", browse: "واصل الاكتشاف", bagTitle: "حقيبتك",
+    bagEmpty: "بداية جميلة.", bagEmptyText: "حقيبتك تنتظر شيئاً لا يُنسى.",
+    subtotal: "المجموع الفرعي", delivery: "التوصيل", total: "الإجمالي", checkout: "اطلب عبر واتساب",
+    name: "اسمك", address: "عنوان التوصيل", remove: "إزالة المنتج", increase: "زيادة الكمية",
+    decrease: "تقليل الكمية", close: "إغلاق", storyEyebrow: "رؤية مايا",
+    storyTitleA: "العطر طريق", storyTitleB: "للعودة إلى ذاتك.",
+    storyText: "نؤمن أن أفضل عطر ليس الأعلى صوتاً في الغرفة، بل هو التفصيل الذي يتذكره الآخرون بعد رحيلك. تقرّب Maya Collection إليك العطور النادرة ذات الشخصية المميزة، المختارة بتأنٍ والمصممة لتُرتدى بطريقتك.",
+    storySign: "بكل عناية، مايا", notesEyebrow: "عطر في ثلاثة فصول", notesTitle: "يتكشف مع الوقت.",
+    notesDesc: "العطر ليس نفحة واحدة. إنه يتغير معك وينفتح برفق مع مرور الساعات.",
+    noteTopTitle: "الانطباع الأول", noteTopText: "تقدم النفحات المشرقة والعابرة العطر وتدعوك للاقتراب.",
+    noteHeartTitle: "الشخصية الحقيقية", noteHeartText: "ينفتح القلب بهدوء ليكشف عن شخصية العطر في جوهره.",
+    noteBaseTitle: "ما يبقى", noteBaseText: "تستقر النفحات الدافئة والثابتة على البشرة وتترك أثراً جميلاً.",
+    closingEyebrow: "ذكراك القادمة", closingTitle: "دع العطر يجدك.", closingCta: "اعثر على عطرك",
+    footerLine: "عطر مختار ليشبهك.", copyright: "Maya Collection · أربيل، العراق",
+    waItem: "مرحباً Maya Collection، أود طلب:",
+    freeDelivery: "توصيل مجاني للطلبات التي تتجاوز $150",
+  },
+} as const;
+
+function formatMoney(amount: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+}
+
+function whatsappHref(message: string) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
+function LogoMark() {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className="text-gold">
-      <path d="M12 6v34h24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      <rect x="21" y="18" width="11" height="16" rx="3" stroke="currentColor" strokeWidth="2" />
-      <rect x="24" y="13" width="5" height="5" rx="1" fill="currentColor" />
+    <svg className="brand-mark" viewBox="0 0 36 42" fill="none" aria-hidden="true">
+      <path d="M18 2.5 31.5 10v15.5L18 40 4.5 25.5V10L18 2.5Z" stroke="currentColor" strokeWidth="1.15" />
+      <path d="M12 28V14l6 8 6-8v14M18 3v8" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="18" cy="11" r="1.6" fill="currentColor" />
     </svg>
   );
 }
 
-function Phone({ label, children }: { label: string; children: ReactNode }) {
+function Rating({ value, reviews }: { value: number; reviews: number }) {
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="phone">{children}</div>
-      <span className="font-serif text-lg text-gold-soft">{label}</span>
-    </div>
-  );
-}
-
-function Onboarding() {
-  return (
-    <div className="h-full relative flex items-center justify-center p-6">
-      <img src={bokeh} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
-      <div className="glass relative rounded-xl p-8 text-center flex flex-col items-center gap-5">
-        <Logo size={64} />
-        <h1 className="font-serif text-4xl text-gold-soft">سێنتۆرا</h1>
-        <div>
-          <p className="font-serif text-2xl">جەوهەری خۆت بدۆزەرەوە</p>
-          <p className="mt-2 text-sm text-muted-foreground">بۆنی لوکس. عەتری نایاب.</p>
-        </div>
-        <button className="btn-gold mt-2 w-full rounded-full py-4 font-semibold flex items-center justify-center gap-2">
-          بۆنەکان ببینە <ArrowLeft size={18} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-const notes = [
-  { i: Citrus, n: "لیمۆیی" }, { i: Flower2, n: "گوڵ" }, { i: TreePine, n: "دار" },
-  { i: Droplets, n: "فێنک" }, { i: Flame, n: "بەهارات" },
-];
-
-function Stars() {
-  return <div className="flex gap-0.5 text-gold">{[...Array(5)].map((_, i) => <Star key={i} size={10} fill="currentColor" />)}</div>;
-}
-
-function BottomNav({ count }: { count: number }) {
-  const items = [Home, Sparkles, Layers, Heart, User];
-  return (
-    <div className="absolute bottom-0 inset-x-0 glass rounded-t-xl px-6 py-3 flex justify-between">
-      {items.map((I, k) => <I key={k} size={20} className={k === 0 ? "text-gold" : "text-muted-foreground"} />)}
-      <span className="sr-only">{count}</span>
-    </div>
-  );
-}
-
-function SizePicker({ value, onChange }: { value: Size; onChange: (s: Size) => void }) {
-  return (
-    <div className="grid grid-cols-4 gap-2">
-      {SIZES.map((s) => (
-        <button key={s} onClick={() => onChange(s)}
-          className={`rounded-full py-1.5 text-xs font-semibold ${value === s ? "btn-gold" : "glass text-gold"}`}>
-          {s} گ
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function HomeScreen({ count, add }: { count: number; add: (id: PId, s: Size) => void }) {
-  const [active, setActive] = useState("گوڵ");
-  return (
-    <div className="h-full relative overflow-hidden">
-      <div className="h-full overflow-y-auto pb-20 px-5 pt-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2"><Logo size={28} /><span className="font-serif text-lg text-gold-soft">سێنتۆرا</span></div>
-          <div className="relative glass rounded-full p-2">
-            <ShoppingBag size={18} className="text-gold" />
-            <span className="absolute -top-1 -left-1 btn-gold text-[10px] font-bold h-4 min-w-4 px-1 rounded-full grid place-items-center">{count}</span>
-          </div>
-        </div>
-        <div className="relative rounded-xl overflow-hidden h-44">
-          <img src={hero} alt="بوتڵی بۆن" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-l from-background/90 to-transparent" />
-          <div className="relative p-5 h-full flex flex-col justify-end w-2/3">
-            <p className="font-serif text-2xl leading-snug">بۆنی تایبەتی خۆت بدۆزەرەوە</p>
-          </div>
-        </div>
-        <div>
-          <p className="font-serif text-lg mb-3">نۆتەکان</p>
-          <div className="flex gap-3 overflow-x-auto">
-            {notes.map(({ i: I, n }) => (
-              <button key={n} onClick={() => setActive(n)} className="flex flex-col items-center gap-1 shrink-0">
-                <span className={`h-12 w-12 rounded-full grid place-items-center ${active === n ? "btn-gold" : "glass text-gold"}`}><I size={18} /></span>
-                <span className="text-[11px] text-muted-foreground">{n}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="font-serif text-lg mb-3">پڕفرۆشترین</p>
-          <div className="grid grid-cols-2 gap-3">
-            {(Object.keys(PRODUCTS) as PId[]).map((id) => {
-              const p = PRODUCTS[id];
-              return (
-                <div key={id} className="glass rounded-lg p-2">
-                  <img src={p.img} alt={p.name} className="h-28 w-full object-cover rounded-md" />
-                  <p className="mt-2 font-serif text-base">{p.name}</p>
-                  <Stars />
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs text-gold font-semibold">{money(p.prices[100])} / ١٠٠گ</p>
-                    <button onClick={() => add(id, 100)} className="btn-gold rounded-full p-1"><Plus size={12} /></button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      <BottomNav count={count} />
-    </div>
-  );
-}
-
-function Detail({ add }: { add: (id: PId, s: Size) => void }) {
-  const [liked, setLiked] = useState(true);
-  const [size, setSize] = useState<Size>(100);
-  const [added, setAdded] = useState(false);
-  const p = PRODUCTS.oud;
-  const feats = [
-    { i: TreePine, k: "نۆتی سەرەکی", v: "عوود" }, { i: Clock, k: "مانەوە", v: "درێژخایەن" },
-    { i: Wind, k: "بڵاوبوونەوە", v: "بەهێز" }, { i: Users, k: "ڕەگەز", v: "هەردووک" },
-  ];
-  return (
-    <div className="h-full flex flex-col">
-      <div className="relative h-[42%]">
-        <img src={p.img} alt={p.name} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-        <button className="absolute top-5 right-5 glass rounded-full p-2"><ChevronRight size={18} /></button>
-        <div className="absolute top-5 left-5 flex gap-2">
-          <button onClick={() => setLiked(!liked)} className="glass rounded-full p-2 text-gold"><Heart size={18} fill={liked ? "currentColor" : "none"} /></button>
-          <button className="glass rounded-full p-2 text-gold"><Share2 size={18} /></button>
-        </div>
-      </div>
-      <div className="flex-1 px-5 -mt-6 relative flex flex-col">
-        <div className="flex justify-between items-end">
-          <h2 className="font-serif text-3xl">{p.name}</h2>
-          <p className="text-xl text-gold font-semibold">{money(p.prices[size])}</p>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">تێکەڵەیەکی دەگمەن و دوکەڵاوی لە عوود، سەندەڵ و ڤێتیڤەر، گەرمکراوە بە هێل و تۆنکا.</p>
-        <p className="text-xs mt-3 mb-2 text-gold-soft">قەبارە (گرام)</p>
-        <SizePicker value={size} onChange={setSize} />
-        <div className="glass rounded-lg mt-3 grid grid-cols-4 py-2">
-          {feats.map(({ i: I, k, v }) => (
-            <div key={k} className="flex flex-col items-center text-center gap-1">
-              <I size={15} className="text-gold" />
-              <span className="text-[9px] text-muted-foreground">{k}</span>
-              <span className="text-[10px] font-semibold">{v}</span>
-            </div>
-          ))}
-        </div>
-        <button onClick={() => { add("oud", size); setAdded(true); setTimeout(() => setAdded(false), 1500); }}
-          className="btn-gold mt-auto mb-5 rounded-full py-4 font-semibold flex items-center justify-center gap-2">
-          <ShoppingBag size={18} /> {added ? "زیادکرا ✓" : "زیادکردن بۆ سەبەتە"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Bag({ lines, setLines }: { lines: Line[]; setLines: (l: Line[]) => void }) {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const change = (i: number, d: number) => setLines(lines.map((l, k) => k === i ? { ...l, q: Math.max(1, l.q + d) } : l));
-  const setSize = (i: number, s: Size) => setLines(lines.map((l, k) => k === i ? { ...l, size: s } : l));
-  const remove = (i: number) => setLines(lines.filter((_, k) => k !== i));
-  const sub = lines.reduce((s, l) => s + PRODUCTS[l.id].prices[l.size] * l.q, 0);
-  const total = sub + (lines.length ? SHIPPING : 0);
-
-  const checkout = () => {
-    const rows = lines.map((l) => `• ${PRODUCTS[l.id].name} — ${l.size} گرام × ${l.q} = ${money(PRODUCTS[l.id].prices[l.size] * l.q)}`);
-    const msg = [
-      "داواکاری نوێ لە سێنتۆرا 🌿", "", ...rows, "",
-      `کۆی بەرهەم: ${money(sub)}`, `گەیاندن: ${money(SHIPPING)}`, `کۆی گشتی: ${money(total)}`, "",
-      name ? `ناو: ${name}` : "", address ? `ناونیشان: ${address}` : "",
-    ].join("\n").trim();
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
-  };
-
-  return (
-    <div className="h-full flex flex-col px-5 pt-6 pb-5 overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <ChevronRight size={20} /><h2 className="font-serif text-2xl">سەبەتەکەم</h2><ShoppingBag size={18} className="text-gold" />
-      </div>
-      <div className="space-y-3">
-        {lines.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">سەبەتەکەت بەتاڵە</p>}
-        {lines.map((l, k) => {
-          const p = PRODUCTS[l.id];
-          return (
-            <div key={k} className="glass rounded-lg p-2 space-y-2">
-              <div className="flex items-center gap-3">
-                <img src={p.img} alt={p.name} className="h-14 w-14 rounded-md object-cover" />
-                <div className="flex-1">
-                  <p className="font-serif text-base">{p.name}</p>
-                  <p className="text-sm text-gold">{money(p.prices[l.size])}</p>
-                </div>
-                <div className="flex items-center gap-2 glass rounded-full px-2 py-1">
-                  <button onClick={() => change(k, 1)}><Plus size={12} /></button>
-                  <span className="text-sm w-3 text-center">{l.q}</span>
-                  <button onClick={() => change(k, -1)}><Minus size={12} /></button>
-                </div>
-                <button onClick={() => remove(k)} className="text-muted-foreground"><Trash2 size={14} /></button>
-              </div>
-              <SizePicker value={l.size} onChange={(s) => setSize(k, s)} />
-            </div>
-          );
-        })}
-      </div>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="ناوت"
-        className="glass rounded-full mt-4 px-4 py-2 text-sm bg-transparent outline-none placeholder:text-muted-foreground" />
-      <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="ناونیشان"
-        className="glass rounded-full mt-2 px-4 py-2 text-sm bg-transparent outline-none placeholder:text-muted-foreground" />
-      <div className="glass rounded-full mt-2 flex items-center pr-4 pl-1 py-1">
-        <Search size={14} className="text-muted-foreground" />
-        <input placeholder="کۆدی داشکاندن" className="bg-transparent flex-1 text-sm px-2 outline-none placeholder:text-muted-foreground" />
-        <button className="text-xs text-gold px-3 py-1">جێبەجێکردن</button>
-      </div>
-      <div className="mt-4 space-y-2 text-sm">
-        <div className="flex justify-between text-muted-foreground"><span>کۆی بەرهەم</span><span>{money(sub)}</span></div>
-        <div className="flex justify-between text-muted-foreground"><span>گەیاندن</span><span>{money(lines.length ? SHIPPING : 0)}</span></div>
-        <div className="flex justify-between border-t pt-3 font-serif text-xl"><span>کۆی گشتی</span><span className="text-gold">{money(total)}</span></div>
-      </div>
-      <button disabled={!lines.length} onClick={checkout}
-        className="btn-gold mt-4 rounded-full py-4 font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-        ناردنی داواکاری بە واتسئاپ <ArrowLeft size={18} />
-      </button>
+    <div className="rating-line" aria-label={`${value} out of 5 stars, ${reviews} reviews`}>
+      <span className="rating-stars" aria-hidden="true">{[0, 1, 2, 3, 4].map((star) => <Star key={star} size={11} fill={star < Math.round(value) ? "currentColor" : "none"} />)}</span>
+      <span>{value.toFixed(1)}</span><span className="rating-count">({reviews})</span>
     </div>
   );
 }
 
 function Index() {
-  const [lines, setLines] = useState<Line[]>([
-    { id: "oud", size: 100, q: 1 }, { id: "rose", size: 100, q: 1 },
-  ]);
-  const add = (id: PId, size: Size) => {
-    const i = lines.findIndex((l) => l.id === id && l.size === size);
-    if (i >= 0) setLines(lines.map((l, k) => k === i ? { ...l, q: l.q + 1 } : l));
-    else setLines([...lines, { id, size, q: 1 }]);
+  const [language, setLanguage] = useState<Language>("en");
+  const [category, setCategory] = useState<Category | "All">("All");
+  const [query, setQuery] = useState("");
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
+  const [favourites, setFavourites] = useState<ProductId[]>([]);
+  const [lines, setLines] = useState<CartLine[]>([]);
+  const [sizes, setSizes] = useState<Record<ProductId, Size>>({ oud: 50, rose: 50, amber: 50 });
+  const [cartOpen, setCartOpen] = useState(false);
+  const [detailId, setDetailId] = useState<ProductId | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [toast, setToast] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const t = COPY[language];
+  const isRtl = language !== "en";
+  const detail = detailId ? PRODUCTS.find((product) => product.id === detailId) ?? null : null;
+  const itemCount = lines.reduce((total, line) => total + line.quantity, 0);
+
+  const visibleProducts = useMemo(() => PRODUCTS.filter((product) => {
+    const matchesCategory = category === "All" || product.categories.includes(category);
+    const matchesSearch = `${product.name} ${product.subtitle} ${product.categories.join(" ")} ${product.top} ${product.heart} ${product.base}`
+      .toLowerCase().includes(query.trim().toLowerCase());
+    const matchesFavourite = !favouritesOnly || favourites.includes(product.id);
+    return matchesCategory && matchesSearch && matchesFavourite;
+  }), [category, query, favouritesOnly, favourites]);
+
+  const subtotal = lines.reduce((total, line) => {
+    const product = PRODUCTS.find((item) => item.id === line.id)!;
+    return total + product.price[line.size] * line.quantity;
+  }, 0);
+  const delivery = lines.length && subtotal < 150 ? 8 : 0;
+  const total = subtotal + delivery;
+
+  useEffect(() => {
+    if (!cartOpen && !detail) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCartOpen(false);
+        setDetailId(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [cartOpen, detail]);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 1900);
   };
-  const count = lines.reduce((s, l) => s + l.q, 0);
+
+  const addToCart = (id: ProductId, size: Size) => {
+    setLines((current) => {
+      const existing = current.find((line) => line.id === id && line.size === size);
+      return existing
+        ? current.map((line) => line.id === id && line.size === size ? { ...line, quantity: line.quantity + 1 } : line)
+        : [...current, { id, size, quantity: 1 }];
+    });
+    const product = PRODUCTS.find((item) => item.id === id)!;
+    showToast(`${product.name} · ${t.added}`);
+  };
+
+  const updateQuantity = (index: number, amount: number) => setLines((current) => current.map((line, i) => i === index
+    ? { ...line, quantity: Math.max(1, line.quantity + amount) } : line));
+  const removeLine = (index: number) => setLines((current) => current.filter((_, i) => i !== index));
+  const toggleFavourite = (id: ProductId) => setFavourites((current) => current.includes(id)
+    ? current.filter((item) => item !== id) : [...current, id]);
+
+  const makeOrderMessage = (selected: CartLine[], withCustomer = false) => {
+    const orderLines = selected.map((line) => {
+      const product = PRODUCTS.find((item) => item.id === line.id)!;
+      return `${product.name} — ${line.size} ml × ${line.quantity} = ${formatMoney(product.price[line.size] * line.quantity)}`;
+    });
+    const orderSubtotal = selected.reduce((sum, line) => {
+      const product = PRODUCTS.find((item) => item.id === line.id)!;
+      return sum + product.price[line.size] * line.quantity;
+    }, 0);
+    const orderDelivery = orderSubtotal >= 150 ? 0 : 8;
+    return [
+      t.waItem, "", ...orderLines, "",
+      `${t.subtotal}: ${formatMoney(orderSubtotal)}`,
+      `${t.delivery}: ${orderDelivery ? formatMoney(orderDelivery) : "Complimentary"}`,
+      `${t.total}: ${formatMoney(orderSubtotal + orderDelivery)}`,
+      ...(withCustomer && customerName ? ["", `${t.name}: ${customerName}`] : []),
+      ...(withCustomer && customerAddress ? [`${t.address}: ${customerAddress}`] : []),
+    ].join("\n");
+  };
+
   return (
-    <main dir="rtl" className="min-h-screen relative overflow-hidden">
-      <img src={bokeh} alt="" className="fixed inset-0 h-full w-full object-cover opacity-30" />
-      <div className="relative px-6 py-14">
-        <header className="text-center mb-12">
-          <p className="text-xs text-gold">بۆنی لوکس بە گرام</p>
-          <h1 className="font-serif text-5xl md:text-6xl mt-3 text-gold-soft">سێنتۆرا</h1>
-          <p className="text-muted-foreground mt-3">٢٠ · ١٠٠ · ٢٥٠ · ٥٠٠ گرام — داواکاری بە واتسئاپ</p>
-        </header>
-        <div className="flex flex-wrap justify-center gap-10">
-          <Phone label="بەخێربێیت"><Onboarding /></Phone>
-          <Phone label="فرۆشگا"><HomeScreen count={count} add={add} /></Phone>
-          <Phone label="عوود وود"><Detail add={add} /></Phone>
-          <Phone label="سەبەتەکەم"><Bag lines={lines} setLines={setLines} /></Phone>
+    <main className={`site-shell${isRtl ? " arabic" : ""}`} dir={isRtl ? "rtl" : "ltr"} lang={language}>
+      <header className="topbar">
+        <a className="brand-lockup" href="#home" aria-label="Maya Collection home">
+          <LogoMark /><span className="serif brand-name">Maya Collection</span>
+        </a>
+          <nav className="top-links" aria-label={language === "ku" ? "بەستەرە سەرەکییەکان" : language === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
+          <a href="#collection">{t.navCollection}</a>
+          <a href="#philosophy">{t.navStory}</a>
+          <a href="#notes">{t.navNotes}</a>
+        </nav>
+        <div className="header-actions">
+          <button className="icon-button" type="button" aria-label={t.search} title={t.search} onClick={() => {
+            document.querySelector("#collection")?.scrollIntoView({ behavior: "smooth" });
+            window.setTimeout(() => searchRef.current?.focus(), 350);
+          }}><Search size={18} strokeWidth={1.5} /></button>
+          <button className={`icon-button${favouritesOnly ? " gold-text" : ""}`} type="button" aria-label={t.wishlist}
+            aria-pressed={favouritesOnly} title={t.wishlist} onClick={() => {
+              setFavouritesOnly((current) => !current);
+              document.querySelector("#collection")?.scrollIntoView({ behavior: "smooth" });
+            }}><Heart size={18} strokeWidth={1.5} fill={favouritesOnly ? "currentColor" : "none"} /></button>
+          <button className="icon-button" type="button" aria-label={`${t.cart}, ${itemCount} items`} title={t.cart} onClick={() => setCartOpen(true)}>
+            <ShoppingBag size={18} strokeWidth={1.5} />{itemCount > 0 && <span className="cart-count">{itemCount}</span>}
+          </button>
+          <button className="lang-toggle" type="button" onClick={() => setLanguage(language === "en" ? "ku" : language === "ku" ? "ar" : "en")}
+            aria-label={language === "en" ? "Switch language to Kurdish, then Arabic" : language === "ku" ? "گۆڕینی زمان بۆ عەرەبی" : "التبديل إلى الإنجليزية"}
+            title="English · کوردی · العربية">{language === "en" ? "کوردی · العربية" : language === "ku" ? "العربية" : "EN · کوردی"}</button>
         </div>
-      </div>
+      </header>
+
+      <section className="hero" id="home" aria-labelledby="hero-title">
+        <img className="hero-art" src={hero} alt="A golden perfume bottle glowing in forest-green light" />
+        <div className="hero-copy">
+          <div className="hero-kicker eyebrow reveal">{t.kicker}</div>
+          <h1 id="hero-title" className="serif reveal delay-1">{language === "en" ? <>Discover Your<br /><em>Signature Scent</em></> : <>{t.headlineA}<br /><em>{t.headlineB}</em></>}</h1>
+          <p className="hero-description reveal delay-2">{t.description}</p>
+          <div className="hero-cta-row reveal delay-3">
+            <a className="gold-button hero-cta" href="#collection">{t.explore}<ArrowRight size={17} strokeWidth={1.6} /></a>
+            <span className="hero-note"><Sparkles size={14} strokeWidth={1.4} />{t.heroNote}</span>
+          </div>
+        </div>
+        <div className="hero-stamp serif" aria-hidden="true">THE ART OF<br />BEING<br />REMEMBERED</div>
+        <div className="hero-index">01 <span /> MAYA COLLECTION</div>
+      </section>
+
+      <section className="section" id="collection">
+        <div className="section-head">
+          <div>
+            <span className="eyebrow">{t.collectionEyebrow}</span>
+            <h2 className="serif">{t.collectionTitle}</h2>
+          </div>
+          <p>{t.collectionDesc}</p>
+        </div>
+        <div className="category-strip" role="group" aria-label={language === "ku" ? "فلتەرکردنی بۆنەکان" : language === "ar" ? "تصفية العطور حسب العائلة" : "Filter fragrances by family"}>
+          <button className={`category-button${category === "All" ? " active" : ""}`} type="button" onClick={() => setCategory("All")}>
+            <Leaf size={20} strokeWidth={1.3} /><span>{t.allScents}</span>
+          </button>
+          {CATEGORY_META.map(({ name, Icon, ku, ar }) => (
+            <button className={`category-button${category === name ? " active" : ""}`} type="button" key={name}
+              aria-pressed={category === name} onClick={() => setCategory(category === name ? "All" : name)}>
+              <Icon size={20} strokeWidth={1.3} /><span>{language === "ku" ? ku : language === "ar" ? ar : name}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="section collection-section">
+          <div className="collection-tools">
+            <span className="results-copy">{favouritesOnly ? t.favourites : `${visibleProducts.length} ${t.fragrances}`}</span>
+            <label className="search-field">
+              <Search size={16} strokeWidth={1.5} />
+              <input ref={searchRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+                placeholder={t.search} aria-label={t.search} />
+            </label>
+          </div>
+          <div className="product-grid">
+            {visibleProducts.map((product) => {
+              const size = sizes[product.id];
+              const cardOrder = makeOrderMessage([{ id: product.id, size, quantity: 1 }]);
+              const isFavourite = favourites.includes(product.id);
+              return (
+                <article className="product-card" key={product.id}>
+                  <div className="product-image-wrap">
+                    <button className="product-detail-trigger" type="button" aria-label={`${t.details}: ${product.name}`} onClick={() => setDetailId(product.id)}>
+                      <img className="product-image" src={product.image} alt={`${product.name} eau de parfum bottle`} />
+                    </button>
+                    <span className="product-tag">{product.tag}</span>
+                    <button className={`wish-button${isFavourite ? " liked" : ""}`} type="button"
+                      aria-label={`${isFavourite ? "Remove" : "Add"} ${product.name} ${t.wishlist.toLowerCase()}`}
+                      aria-pressed={isFavourite} onClick={() => toggleFavourite(product.id)}>
+                      <Heart size={17} strokeWidth={1.6} fill={isFavourite ? "currentColor" : "none"} />
+                    </button>
+                    <div className="image-caption"><span>EAU DE PARFUM</span><span>NO. 0{PRODUCTS.indexOf(product) + 1}</span></div>
+                  </div>
+                  <div className="product-info">
+                    <div className="product-title-row"><h3 className="serif product-title">{product.name}</h3><span className="product-price">{formatMoney(product.price[size])}</span></div>
+                    <p className="product-subtitle">{product.subtitle}</p>
+                    <Rating value={product.rating} reviews={product.reviews} />
+                    <div className="product-foot">
+                      <label>
+                        <span className="sr-only">{t.volume}</span>
+                        <select className="volume-select" value={size} onChange={(event) => setSizes((current) => ({ ...current, [product.id]: Number(event.target.value) as Size }))} aria-label={`${product.name} ${t.volume}`}>
+                          {SIZES.map((option) => <option key={option} value={option}>{option} ml</option>)}
+                        </select>
+                      </label>
+                      <div className="card-actions">
+                        <a className="wa-link" href={whatsappHref(cardOrder)} target="_blank" rel="noreferrer"
+                          aria-label={`Order ${product.name}, ${size} ml, directly via WhatsApp`}>
+                          {t.cardOrder} <ArrowUpRight size={13} aria-hidden="true" />
+                        </a>
+                        <button className="add-mini" type="button" onClick={() => addToCart(product.id, size)} aria-label={`${t.add}: ${product.name}, ${size} ml`}>
+                          <Plus size={17} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+            {visibleProducts.length === 0 && <div className="empty-products">
+              <Sparkles size={24} /><p className="serif" style={{ fontSize: "1.5rem", margin: "12px 0 8px" }}>{language === "ku" ? "ئەم بۆنە بەردەست نییە" : language === "ar" ? "لا توجد عطور هنا حالياً." : "Nothing here, just yet."}</p>
+              <p style={{ margin: 0 }}>{language === "en" ? "Try another search or clear your filters to see the full collection." : language === "ku" ? "وشەیەکی تر تاقی بکەرەوە یان فلتەرەکان پاک بکەرەوە." : "جرّب البحث بكلمة أخرى أو امسح الفلاتر لرؤية المجموعة كاملة."}</p>
+              <button className="outline-button" type="button" onClick={() => { setCategory("All"); setQuery(""); setFavouritesOnly(false); }}
+                style={{ marginTop: 18, padding: "10px 14px", background: "transparent", color: "var(--gold-soft)" }}>{t.clearFilters}</button>
+            </div>}
+          </div>
+        </div>
+      </section>
+
+      <section className="story-section" id="philosophy">
+        <div className="story-visual"><img className="story-image" src={bokeh} alt="Soft candlelit bokeh in deep emerald and antique gold" /></div>
+        <div className="story-copy">
+          <span className="eyebrow">{t.storyEyebrow}</span>
+          <h2 className="serif">{t.storyTitleA}<br /><em className="gold-text">{t.storyTitleB}</em></h2>
+          <p>{t.storyText}</p>
+          <div className="story-signature"><span />{t.storySign}</div>
+        </div>
+      </section>
+
+      <section className="section notes-section" id="notes">
+        <div className="notes-intro">
+          <span className="eyebrow">{t.notesEyebrow}</span>
+          <h2 className="serif" style={{ margin: "10px 0 14px", fontSize: "clamp(2.8rem,5vw,4.8rem)", lineHeight: ".95", fontWeight: 400 }}>{t.notesTitle}</h2>
+          <p style={{ color: "var(--muted-foreground)", fontSize: ".84rem", lineHeight: 1.8, margin: 0 }}>{t.notesDesc}</p>
+        </div>
+        <div className="note-columns">
+          <article className="note-column">
+            <span className="note-number">01</span><h3>{t.noteTopTitle}</h3><p>{t.noteTopText}</p>
+            <div className="note-chips"><span>Bergamot</span><span>Cardamom</span><span>Pear</span></div>
+          </article>
+          <article className="note-column">
+            <span className="note-number">02</span><h3>{t.noteHeartTitle}</h3><p>{t.noteHeartText}</p>
+            <div className="note-chips"><span>Damask rose</span><span>Oud</span><span>Jasmine</span></div>
+          </article>
+          <article className="note-column">
+            <span className="note-number">03</span><h3>{t.noteBaseTitle}</h3><p>{t.noteBaseText}</p>
+            <div className="note-chips"><span>Amber</span><span>Vetiver</span><span>White musk</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section className="closing">
+        <span className="eyebrow">{t.closingEyebrow}</span>
+        <h2 className="serif">{t.closingTitle}</h2>
+        <a className="outline-button" href="#collection">{t.closingCta}<ArrowDownRight size={16} /></a>
+      </section>
+      <footer className="footer">
+        <a className="brand-lockup" href="#home"><LogoMark /><span className="serif brand-name">Maya Collection</span></a>
+        <span>{t.footerLine}</span>
+        <div className="footer-links"><a href="#collection">{t.navCollection}</a><a href="#philosophy">{t.navStory}</a><a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">WhatsApp</a></div>
+        <span>{t.copyright}</span>
+      </footer>
+
+      {cartOpen && <div className="overlay-open" onMouseDown={(event) => { if (event.target === event.currentTarget) setCartOpen(false); }}>
+        <aside className="cart-panel" role="dialog" aria-modal="true" aria-labelledby="cart-heading">
+          <div className="panel-heading"><h2 id="cart-heading">{t.bagTitle}<span style={{ color: "var(--gold)", fontSize: "1rem", marginInlineStart: 10 }}>({itemCount})</span></h2>
+            <button className="close-button" type="button" aria-label={t.close} onClick={() => setCartOpen(false)}><X size={19} /></button></div>
+          {lines.length === 0 ? <div className="empty-cart">
+            <ShoppingBag size={24} strokeWidth={1.3} /><p>{t.bagEmpty}</p><span>{t.bagEmptyText}</span>
+            <br /><button className="outline-button" type="button" onClick={() => { setCartOpen(false); document.querySelector("#collection")?.scrollIntoView({ behavior: "smooth" }); }}
+              style={{ marginTop: 20, padding: "11px 14px", background: "transparent", color: "var(--gold-soft)" }}>{t.browse}</button>
+          </div> : <>
+            <div className="cart-items">
+              {lines.map((line, index) => {
+                const product = PRODUCTS.find((item) => item.id === line.id)!;
+                return <div className="cart-item" key={`${line.id}-${line.size}`}>
+                  <img src={product.image} alt={`${product.name} perfume bottle`} />
+                  <div><h3>{product.name}</h3><p>{formatMoney(product.price[line.size])}</p><p className="cart-item-meta">{line.size} ml · {product.categories.join(" · ")}</p>
+                    <div className="quantity-control">
+                      <button type="button" aria-label={t.increase} onClick={() => updateQuantity(index, 1)}><Plus size={12} /></button>
+                      <span>{line.quantity}</span>
+                      <button type="button" aria-label={t.decrease} onClick={() => updateQuantity(index, -1)}><Minus size={12} /></button>
+                    </div>
+                  </div>
+                  <button className="remove-item" type="button" aria-label={`${t.remove}: ${product.name}`} onClick={() => removeLine(index)}><Trash2 size={16} /></button>
+                </div>;
+              })}
+            </div>
+            <div className="cart-fields">
+              <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t.name} aria-label={t.name} />
+              <input value={customerAddress} onChange={(event) => setCustomerAddress(event.target.value)} placeholder={t.address} aria-label={t.address} />
+            </div>
+            <p style={{ color: "var(--muted-foreground)", fontSize: ".69rem", margin: "0 0 17px" }}>{t.freeDelivery}</p>
+            <div className="cart-total"><span>{t.subtotal}</span><span>{formatMoney(subtotal)}</span></div>
+            <div className="cart-total"><span>{t.delivery}</span><span>{delivery ? formatMoney(delivery) : "Complimentary"}</span></div>
+            <div className="cart-total final"><span>{t.total}</span><strong>{formatMoney(total)}</strong></div>
+            <a className="gold-button checkout-link" href={whatsappHref(makeOrderMessage(lines, true))} target="_blank" rel="noreferrer">
+              {t.checkout}<ArrowRight size={17} />
+            </a>
+          </>}
+        </aside>
+      </div>}
+
+      {detail && <div className="overlay-open detail-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setDetailId(null); }}>
+        <section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-heading">
+          <img className="detail-image" src={detail.image} alt={`${detail.name} perfume bottle, presented in rich green and gold light`} />
+          <div className="detail-content">
+            <button className="close-button" type="button" aria-label={t.close} onClick={() => setDetailId(null)}><X size={19} /></button>
+            <span className="eyebrow">{detail.tag} · {detail.category}</span>
+            <h2 id="detail-heading">{detail.name}</h2>
+            <Rating value={detail.rating} reviews={detail.reviews} />
+            <p className="detail-description">{detail.description}</p>
+            <div className="product-title-row"><span className="eyebrow">{t.volume}</span><span className="detail-price">{formatMoney(detail.price[sizes[detail.id]])}</span></div>
+            <label><span className="sr-only">{detail.name} {t.volume}</span>
+              <select className="volume-select" style={{ marginTop: 10, border: "1px solid var(--border)", padding: "10px 13px", minWidth: 135, background: "#19372a" }}
+                value={sizes[detail.id]} onChange={(event) => setSizes((current) => ({ ...current, [detail.id]: Number(event.target.value) as Size }))}>
+                {SIZES.map((size) => <option key={size} value={size}>{size} ml · {formatMoney(detail.price[size])}</option>)}
+              </select>
+            </label>
+            <div className="detail-notes" aria-label={t.notes}>
+              <div className="detail-note-row"><strong title="The first notes you notice as the fragrance opens">{t.top}</strong><span>{detail.top}</span><Info size={13} color="var(--gold)" aria-hidden="true" /></div>
+              <div className="detail-note-row"><strong title="The central character that develops on your skin">{t.heart}</strong><span>{detail.heart}</span><Info size={13} color="var(--gold)" aria-hidden="true" /></div>
+              <div className="detail-note-row"><strong title="The warm notes that linger longest">{t.base}</strong><span>{detail.base}</span><Info size={13} color="var(--gold)" aria-hidden="true" /></div>
+            </div>
+            <div className="performance">
+              <span title="Typical wear time; varies by skin and environment"><Clock3 size={13} style={{ verticalAlign: "middle", marginInlineEnd: 5 }} />{t.longevity}: {detail.longevity}</span>
+              <span title="How far the scent gently carries from the skin"><Wind size={13} style={{ verticalAlign: "middle", marginInlineEnd: 5 }} />{t.projection}: {detail.projection}</span>
+            </div>
+            <button className="gold-button detail-add" type="button" onClick={() => { addToCart(detail.id, sizes[detail.id]); setDetailId(null); }}>
+              <ShoppingBag size={16} />{t.detailAdd}
+            </button>
+          </div>
+        </section>
+      </div>}
+
+      {toast && <div className="toast" role="status"><Check size={15} style={{ verticalAlign: "middle", marginInlineEnd: 7 }} />{toast}</div>}
     </main>
   );
 }
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Maya Collection — Discover Your Signature Scent" },
+      { name: "description", content: "Discover rare, characterful fragrances at Maya Collection. Find the scent that feels like it has always been yours." },
+      { property: "og:title", content: "Maya Collection — Discover Your Signature Scent" },
+      { property: "og:description", content: "Rare compositions. A little ceremony. Find your signature scent." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+    ],
+  }),
+  component: Index,
+});
