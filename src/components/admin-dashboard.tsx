@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, LoaderCircle, LogOut, PackagePlus, Save, Trash2 } from "lucide-react";
 import {
@@ -41,6 +41,8 @@ const EMPTY_DRAFT: ProductDraft = {
 const inputClass =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--deep)]/40 px-3 py-2.5 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]";
 const labelClass = "grid gap-1.5 text-sm text-muted-foreground";
+const MAX_PRODUCT_IMAGE_BYTES = 2 * 1024 * 1024;
+const PRODUCT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 function messageFromError(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
@@ -75,6 +77,7 @@ function parseSizes(value: string) {
 
 export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontCatalog }) {
   const router = useRouter();
+  const productImageInputRef = useRef<HTMLInputElement>(null);
   const [catalog, setCatalog] = useState(initialCatalog);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [edits, setEdits] = useState<Record<string, CatalogProduct>>({});
@@ -110,7 +113,7 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
 
     try {
       if (!draft.name.trim() || !draft.brand.trim() || !draft.image.trim()) {
-        throw new Error("Enter the product name, brand, and image URL.");
+        throw new Error("Enter the product name and brand, then choose a product image.");
       }
       const categories = [...new Set(draft.categories.split(",").map((item) => item.trim()).filter(Boolean))];
       const product = {
@@ -130,7 +133,10 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
         () => createProductFn({ data: product }),
         "Product added to the store.",
       );
-      if (saved) setDraft(EMPTY_DRAFT);
+      if (saved) {
+        setDraft(EMPTY_DRAFT);
+        if (productImageInputRef.current) productImageInputRef.current.value = "";
+      }
     } catch (error) {
       setNotice({ type: "error", message: messageFromError(error) });
     }
@@ -205,6 +211,38 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
 
   function updateDraft<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  async function handleProductImageChange(file: File | undefined) {
+    if (!file) return;
+    updateDraft("image", "");
+
+    if (!PRODUCT_IMAGE_TYPES.has(file.type)) {
+      if (productImageInputRef.current) productImageInputRef.current.value = "";
+      setNotice({ type: "error", message: "Choose a JPEG, PNG, WebP, or AVIF image." });
+      return;
+    }
+    if (file.size > MAX_PRODUCT_IMAGE_BYTES) {
+      if (productImageInputRef.current) productImageInputRef.current.value = "";
+      setNotice({ type: "error", message: "Choose an image smaller than 2 MB." });
+      return;
+    }
+
+    setNotice(null);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") resolve(reader.result);
+          else reject(new Error("Could not read the selected image."));
+        };
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(file);
+      });
+      updateDraft("image", dataUrl);
+    } catch (error) {
+      setNotice({ type: "error", message: messageFromError(error) });
+    }
   }
 
   return (
@@ -284,10 +322,38 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
                   <input className={inputClass} maxLength={120} value={draft.brand} onChange={(event) => updateDraft("brand", event.target.value)} />
                 </label>
               </div>
-              <label className={labelClass}>
-                Product image URL *
-                <input className={inputClass} maxLength={3_000_000} placeholder="https://…" value={draft.image} onChange={(event) => updateDraft("image", event.target.value)} />
-              </label>
+              <div className={labelClass}>
+                <label htmlFor="product-image">Product image *</label>
+                <input
+                  id="product-image"
+                  ref={productImageInputRef}
+                  aria-label="Product image *"
+                  className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-[var(--gold)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--deep)]`}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  onChange={(event) => void handleProductImageChange(event.currentTarget.files?.[0])}
+                />
+                <p className="text-xs">Choose a photo from your device’s gallery (JPEG, PNG, WebP, or AVIF; max 2 MB).</p>
+                {draft.image && (
+                  <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-2">
+                    <img
+                      src={draft.image}
+                      alt="Product image preview"
+                      className="h-20 w-20 rounded-md object-cover"
+                    />
+                    <button
+                      type="button"
+                      className="outline-button rounded-lg px-3 py-2 text-sm"
+                      onClick={() => {
+                        updateDraft("image", "");
+                        if (productImageInputRef.current) productImageInputRef.current.value = "";
+                      }}
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                )}
+              </div>
               <label className={labelClass}>
                 Short description
                 <input className={inputClass} maxLength={240} value={draft.subtitle} onChange={(event) => updateDraft("subtitle", event.target.value)} />

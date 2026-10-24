@@ -52,12 +52,18 @@ describe("interactive buttons", () => {
 
     fireEvent.change(screen.getByRole("textbox", { name: /Product name/ }), { target: { value: "Sea Breeze" } });
     fireEvent.change(screen.getByRole("textbox", { name: "Brand *" }), { target: { value: "Scentora" } });
-    fireEvent.change(screen.getByRole("textbox", { name: "Product image URL *" }), { target: { value: "https://example.com/sea-breeze.jpg" } });
+    fireEvent.change(screen.getByLabelText("Product image *"), {
+      target: { files: [new File(["photo"], "sea-breeze.jpg", { type: "image/jpeg" })] },
+    });
+    expect(await screen.findByRole("img", { name: "Product image preview" })).toBeInTheDocument();
     fireEvent.change(screen.getByRole("textbox", { name: /Sizes and prices/ }), { target: { value: "50:88" } });
     fireEvent.click(screen.getByRole("button", { name: "Add product" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Product added to the store.");
     expect(createProductFn).toHaveBeenCalledTimes(1);
+    expect(createProductFn).toHaveBeenCalledWith({
+      data: expect.objectContaining({ image: expect.stringMatching(/^data:image\/jpeg;base64,/) }),
+    });
     expect(screen.getByRole("textbox", { name: "Sea Breeze product name" })).toHaveValue("Sea Breeze");
 
     fireEvent.change(screen.getByRole("textbox", { name: "Oud Wood product name" }), { target: { value: "Oud Wood Reserve" } });
