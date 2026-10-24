@@ -1,18 +1,23 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import z from "zod";
 import type { CatalogCategory, CatalogProduct } from "./catalog-types";
 
-const productSchema = z.object({
+const productShape = z.object({
   id: z.string().min(1).max(100),
   name: z.string().trim().min(1).max(120),
   brand: z.string().trim().min(1).max(120),
   image: z.string().trim().min(1).max(3_000_000),
   subtitle: z.string().max(240),
   categories: z.array(z.string().trim().min(1).max(48)).max(12),
-  sizes: z.array(z.object({
-    volume: z.number().int().min(1).max(5000),
-    price: z.number().min(0).max(10_000_000),
-  })).min(1).max(12),
+  sizes: z
+    .array(
+      z.object({
+        volume: z.number().int().min(1).max(5000),
+        price: z.number().min(0).max(10_000_000),
+      }),
+    )
+    .min(1)
+    .max(12),
   rating: z.number().min(0).max(5),
   reviews: z.number().int().min(0),
   tag: z.string().max(100),
@@ -23,11 +28,18 @@ const productSchema = z.object({
   projection: z.string().max(160),
   description: z.string().max(2000),
   inStock: z.boolean(),
-}).refine((product) => new Set(product.sizes.map((size) => size.volume)).size === product.sizes.length, {
+});
+
+const hasUniqueVolumes = (product: { sizes: Array<{ volume: number }> }) =>
+  new Set(product.sizes.map((size) => size.volume)).size === product.sizes.length;
+
+const productSchema = productShape.refine(hasUniqueVolumes, {
   message: "Bottle volumes must be unique.",
 });
 
-const productDraftSchema = productSchema.omit({ id: true, rating: true, reviews: true, tag: true, longevity: true, projection: true });
+const productDraftSchema = productShape
+  .omit({ id: true, rating: true, reviews: true, tag: true, longevity: true, projection: true })
+  .refine(hasUniqueVolumes, { message: "Bottle volumes must be unique." });
 
 export const getStorefrontCatalogFn = createServerFn({ method: "GET" }).handler(async () => {
   const { getStorefrontCatalog } = await import("./catalog.server");
@@ -77,7 +89,9 @@ export const createProductFn = createServerFn({ method: "POST" })
   });
 
 export const updateProductFn = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({ id: z.string().min(1), product: productSchema }).parse(data))
+  .validator((data: unknown) =>
+    z.object({ id: z.string().min(1), product: productSchema }).parse(data),
+  )
   .handler(async ({ data }) => {
     const { requireAdmin } = await import("./admin-auth.server");
     await requireAdmin();
@@ -95,9 +109,13 @@ export const deleteProductFn = createServerFn({ method: "POST" })
   });
 
 export const updateCategoriesFn = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({
-    categories: z.array(z.string().trim().min(1).max(48)).max(40),
-  }).parse(data))
+  .validator((data: unknown) =>
+    z
+      .object({
+        categories: z.array(z.string().trim().min(1).max(48)).max(40),
+      })
+      .parse(data),
+  )
   .handler(async ({ data }) => {
     const { requireAdmin } = await import("./admin-auth.server");
     await requireAdmin();
@@ -107,9 +125,16 @@ export const updateCategoriesFn = createServerFn({ method: "POST" })
   });
 
 export const updateWhatsappFn = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({
-    whatsappNumber: z.string().trim().regex(/^\+?\d{7,18}$/),
-  }).parse(data))
+  .validator((data: unknown) =>
+    z
+      .object({
+        whatsappNumber: z
+          .string()
+          .trim()
+          .regex(/^\+?\d{7,18}$/),
+      })
+      .parse(data),
+  )
   .handler(async ({ data }) => {
     const { requireAdmin } = await import("./admin-auth.server");
     await requireAdmin();

@@ -69,7 +69,7 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
 let pool: Pool | undefined;
 
 function getPool() {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = process.env["DATABASE_URL"];
   if (!connectionString) {
     throw new Error("The database is not configured. Add the Replit database to this app before saving store data.");
   }

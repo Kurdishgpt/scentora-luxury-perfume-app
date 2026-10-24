@@ -10,7 +10,7 @@ type AdminSessionData = { isAdmin?: boolean };
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
 async function getAdminSession() {
-  const secret = process.env.SESSION_SECRET;
+  const secret = process.env["SESSION_SECRET"];
   if (!secret || secret.length < 32) {
     throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
   }
@@ -23,7 +23,7 @@ async function getAdminSession() {
 }
 
 async function matchesConfiguredPassword(candidate: string) {
-  const configuredPassword = process.env.ADMIN_PASSWORD;
+  const configuredPassword = process.env["ADMIN_PASSWORD"];
   if (!configuredPassword) throw new Error("ADMIN_PASSWORD is not configured in Replit Secrets.");
   const encoder = new TextEncoder();
   const [expected, actual] = await Promise.all([

@@ -1,0 +1,1 @@
+- [Zod 3 derived schemas](zod-derived-schemas.md) — derive `.pick()`/`.omit()` variants before `.refine()`, then reapply shared refinements.

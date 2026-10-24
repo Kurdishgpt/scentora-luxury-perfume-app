@@ -197,14 +197,20 @@ function LoginSettings() {
     <>
       <div className="relative rounded-xl overflow-hidden mb-5">
         <img src={bokeh} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
-        <div className="glass relative m-3 rounded-xl p-5 space-y-3">
+        <form
+          className="glass relative m-3 rounded-xl p-5 space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setLoginMessage("چوونەژوورەوە لەم پێشبینینەدا چالاک نییە.");
+          }}
+        >
           <p className="font-serif text-2xl text-center text-gold-soft">دەروازەی ئەدمین</p>
           <div className="glass rounded-lg flex items-center px-3 gap-2"><Mail size={14} className="text-gold" /><input type="email" autoComplete="username" className="bg-transparent py-2.5 text-sm flex-1 outline-none placeholder:text-muted-foreground" placeholder="ئیمەیڵ" /></div>
           <div className="glass rounded-lg flex items-center px-3 gap-2"><Lock size={14} className="text-gold" /><input type="password" autoComplete="current-password" className="bg-transparent py-2.5 text-sm flex-1 outline-none placeholder:text-muted-foreground" placeholder="وشەی نهێنی" /></div>
           <div className="flex items-center justify-between text-sm"><span className="flex items-center gap-2"><ScanFace size={16} className="text-gold" />Face ID</span><Toggle on={face} set={setFace} /></div>
-          <button type="button" onClick={() => setLoginMessage("چوونەژوورەوە لەم پێشبینینەدا چالاک نییە.")} className="btn-gold w-full rounded-full py-3 font-semibold">چوونەژوورەوە</button>
+          <button type="submit" className="btn-gold w-full rounded-full py-3 font-semibold">چوونەژوورەوە</button>
           {loginMessage && <p role="status" className="text-center text-xs text-gold-soft">{loginMessage}</p>}
-        </div>
+        </form>
       </div>
       <p className="text-xs text-gold-soft mb-2">ئاسایش</p>
       <div className="glass rounded-lg p-3 flex items-center justify-between text-sm mb-4">
