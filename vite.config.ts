@@ -7,6 +7,8 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // On Netlify, build a Netlify Functions server instead of the default Cloudflare Worker.
+  ...(process.env.NETLIFY ? { nitro: { preset: "netlify" } } : {}),
   vite: {
     server: {
       host: "0.0.0.0",
