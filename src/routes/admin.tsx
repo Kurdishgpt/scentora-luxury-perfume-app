@@ -142,7 +142,7 @@ function Categories() {
       <Title>پۆل و نۆتەکان</Title>
       <div className="space-y-3 pb-16">
         {cats.map((c, i) => {
-          const I = icons[i % icons.length];
+          const I = icons[i % icons.length] ?? Citrus;
           return (
             <div key={i} className="glass rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
