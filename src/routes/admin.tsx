@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   ImagePlus, Save, Pencil, Citrus, Flower2, TreePine, Moon, Droplets, Plus, GripVertical, X,
   Mail, Lock, ScanFace, Shield, Store, Bell, Globe, CreditCard, ChevronLeft, Package,
@@ -44,7 +44,7 @@ const label = "text-xs text-gold-soft mb-1 block";
 
 function Toggle({ on, set }: { on: boolean; set: (v: boolean) => void }) {
   return (
-    <button onClick={() => set(!on)} className={`w-10 h-6 rounded-full p-0.5 flex ${on ? "btn-gold justify-start" : "glass justify-end"}`}>
+    <button type="button" aria-pressed={on} onClick={() => set(!on)} className={`w-10 h-6 rounded-full p-0.5 flex ${on ? "btn-gold justify-start" : "glass justify-end"}`}>
       <span className="h-5 w-5 rounded-full bg-foreground" />
     </button>
   );
@@ -53,12 +53,22 @@ function Toggle({ on, set }: { on: boolean; set: (v: boolean) => void }) {
 function AddProduct() {
   const [notes, setNotes] = useState(["عوود", "گوڵ", "ڤانیلا"]);
   const [saved, setSaved] = useState(false);
+  const [imageName, setImageName] = useState("");
+  const imageInput = useRef<HTMLInputElement>(null);
   return (
     <>
       <Title>زیادکردنی بۆن</Title>
       <div className="space-y-3">
-        <button className="glass w-full h-28 rounded-lg border-dashed flex flex-col items-center justify-center gap-1 text-gold">
-          <ImagePlus size={24} /><span className="text-xs text-muted-foreground">بارکردنی وێنە</span>
+        <input
+          ref={imageInput}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          aria-label="هەڵبژاردنی وێنەی بەرهەم"
+          onChange={(event) => setImageName(event.target.files?.[0]?.name ?? "")}
+        />
+        <button type="button" onClick={() => imageInput.current?.click()} className="glass w-full h-28 rounded-lg border-dashed flex flex-col items-center justify-center gap-1 text-gold">
+          <ImagePlus size={24} /><span className="text-xs text-muted-foreground">{imageName || "بارکردنی وێنە"}</span>
         </button>
         <div><span className={label}>ناوی بۆن</span><input className={field} placeholder="عوود وود" /></div>
         <div><span className={label}>براند</span><input className={field} placeholder="سێنتۆرا" /></div>
@@ -71,16 +81,17 @@ function AddProduct() {
           <div className="flex flex-wrap gap-2">
             {notes.map((n) => (
               <span key={n} className="glass rounded-full px-3 py-1 text-xs flex items-center gap-1">
-                {n}<button onClick={() => setNotes(notes.filter((x) => x !== n))}><X size={10} /></button>
+                {n}<button type="button" aria-label={`لابردنی ${n}`} onClick={() => setNotes(notes.filter((x) => x !== n))}><X size={10} /></button>
               </span>
             ))}
-            <button onClick={() => setNotes([...notes, "مسک"])} className="rounded-full px-3 py-1 text-xs text-gold border border-dashed">+ زیادکردن</button>
+            <button type="button" onClick={() => setNotes((current) => current.includes("مسک") ? current : [...current, "مسک"])} className="rounded-full px-3 py-1 text-xs text-gold border border-dashed">+ زیادکردن</button>
           </div>
         </div>
-        <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 1500); }}
+        <button type="button" onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 1500); }}
           className="btn-gold w-full rounded-full py-3.5 font-semibold flex items-center justify-center gap-2 mt-2">
           <Save size={16} /> {saved ? "پاشەکەوت کرا ✓" : "پاشەکەوتکردنی بەرهەم"}
         </button>
+        {saved && <p role="status" className="text-center text-xs text-gold-soft">بەرهەمەکە لەم پێشبینینەدا پاشەکەوت کرا.</p>}
       </div>
     </>
   );
@@ -93,6 +104,7 @@ function Inventory() {
     { n: "ڕاڤان", img: hero, p: "120.00", stock: 0, on: false },
   ]);
   const upd = (i: number, patch: Partial<(typeof items)[0]>) => setItems(items.map((it, k) => (k === i ? { ...it, ...patch } : it)));
+  const focusPrice = (index: number) => document.getElementById(`inventory-price-${index}`)?.focus();
   return (
     <>
       <Title>نرخ و کۆگا</Title>
@@ -108,11 +120,13 @@ function Inventory() {
             <div className="flex-1 space-y-1.5">
               <div className="flex items-center justify-between">
                 <p className="font-serif text-base">{it.n}</p>
-                <Pencil size={13} className="text-gold" />
+                <button type="button" aria-label={`نرخ بگۆڕە: ${it.n}`} onClick={() => focusPrice(i)} className="text-gold">
+                  <Pencil size={13} />
+                </button>
               </div>
               <div className="flex items-center gap-1 glass rounded-md px-2 py-0.5 w-24">
                 <span className="text-gold text-xs">$</span>
-                <input value={it.p} onChange={(e) => upd(i, { p: e.target.value })} className="bg-transparent text-sm w-full outline-none" />
+                <input id={`inventory-price-${i}`} aria-label={`نرخی ${it.n}`} inputMode="decimal" value={it.p} onChange={(e) => upd(i, { p: e.target.value })} className="bg-transparent text-sm w-full outline-none" />
               </div>
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] rounded-full px-2 py-0.5 ${it.stock === 0 ? "bg-destructive/30" : it.stock < 5 ? "glass text-gold" : "btn-gold"}`}>
@@ -161,7 +175,7 @@ function Categories() {
           );
         })}
       </div>
-      <button onClick={() => setCats([...cats, { n: "پۆلی نوێ", tags: [] }])}
+      <button type="button" onClick={() => setCats((current) => [...current, { n: "پۆلی نوێ", tags: [] }])}
         className="sticky bottom-0 mr-auto btn-gold rounded-full px-4 py-3 text-sm font-semibold flex items-center gap-1">
         <Plus size={16} /> پۆلی نوێ
       </button>
@@ -172,6 +186,12 @@ function Categories() {
 function LoginSettings() {
   const [face, setFace] = useState(true);
   const [twoFa, setTwoFa] = useState(false);
+  const [loginMessage, setLoginMessage] = useState("");
+  const [selectedSetting, setSelectedSetting] = useState("");
+  const [storeName, setStoreName] = useState("سێنتۆرا");
+  const [freeDelivery, setFreeDelivery] = useState(true);
+  const [notifications, setNotifications] = useState(true);
+  const [storeLanguage, setStoreLanguage] = useState("کوردی");
   const menu = [[Store, "زانیاری فرۆشگا"], [CreditCard, "پارەدان و گەیاندن"], [Bell, "ئاگادارکردنەوەکان"], [Globe, "زمان: کوردی"]] as const;
   return (
     <>
@@ -179,10 +199,11 @@ function LoginSettings() {
         <img src={bokeh} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="glass relative m-3 rounded-xl p-5 space-y-3">
           <p className="font-serif text-2xl text-center text-gold-soft">دەروازەی ئەدمین</p>
-          <div className="glass rounded-lg flex items-center px-3 gap-2"><Mail size={14} className="text-gold" /><input className="bg-transparent py-2.5 text-sm flex-1 outline-none placeholder:text-muted-foreground" placeholder="ئیمەیڵ" /></div>
-          <div className="glass rounded-lg flex items-center px-3 gap-2"><Lock size={14} className="text-gold" /><input type="password" className="bg-transparent py-2.5 text-sm flex-1 outline-none placeholder:text-muted-foreground" placeholder="وشەی نهێنی" /></div>
+          <div className="glass rounded-lg flex items-center px-3 gap-2"><Mail size={14} className="text-gold" /><input type="email" autoComplete="username" className="bg-transparent py-2.5 text-sm flex-1 outline-none placeholder:text-muted-foreground" placeholder="ئیمەیڵ" /></div>
+          <div className="glass rounded-lg flex items-center px-3 gap-2"><Lock size={14} className="text-gold" /><input type="password" autoComplete="current-password" className="bg-transparent py-2.5 text-sm flex-1 outline-none placeholder:text-muted-foreground" placeholder="وشەی نهێنی" /></div>
           <div className="flex items-center justify-between text-sm"><span className="flex items-center gap-2"><ScanFace size={16} className="text-gold" />Face ID</span><Toggle on={face} set={setFace} /></div>
-          <button className="btn-gold w-full rounded-full py-3 font-semibold">چوونەژوورەوە</button>
+          <button type="button" onClick={() => setLoginMessage("چوونەژوورەوە لەم پێشبینینەدا چالاک نییە.")} className="btn-gold w-full rounded-full py-3 font-semibold">چوونەژوورەوە</button>
+          {loginMessage && <p role="status" className="text-center text-xs text-gold-soft">{loginMessage}</p>}
         </div>
       </div>
       <p className="text-xs text-gold-soft mb-2">ئاسایش</p>
@@ -192,11 +213,35 @@ function LoginSettings() {
       <p className="text-xs text-gold-soft mb-2">ڕێکخستنی فرۆشگا</p>
       <div className="glass rounded-lg divide-y">
         {menu.map(([I, t]) => (
-          <div key={t} className="flex items-center justify-between p-3 text-sm">
+          <button type="button" key={t} aria-expanded={selectedSetting === t} onClick={() => setSelectedSetting((current) => current === t ? "" : t)} className="w-full flex items-center justify-between p-3 text-sm text-right">
             <span className="flex items-center gap-2"><I size={15} className="text-gold" />{t}</span><ChevronLeft size={14} className="text-muted-foreground" />
-          </div>
+          </button>
         ))}
       </div>
+      {selectedSetting === "زانیاری فرۆشگا" && (
+        <label className="block glass rounded-lg p-3 mt-2 text-xs text-gold-soft">
+          ناوی فرۆشگا
+          <input aria-label="ناوی فرۆشگا" value={storeName} onChange={(event) => setStoreName(event.target.value)} className={`${field} mt-2`} />
+        </label>
+      )}
+      {selectedSetting === "پارەدان و گەیاندن" && (
+        <div className="glass rounded-lg p-3 mt-2 flex items-center justify-between text-xs">
+          <span>گەیاندنی خۆڕایی</span><Toggle on={freeDelivery} set={setFreeDelivery} />
+        </div>
+      )}
+      {selectedSetting === "ئاگادارکردنەوەکان" && (
+        <div className="glass rounded-lg p-3 mt-2 flex items-center justify-between text-xs">
+          <span>چالاککردنی ئاگادارکردنەوەکان</span><Toggle on={notifications} set={setNotifications} />
+        </div>
+      )}
+      {selectedSetting === "زمان: کوردی" && (
+        <label className="block glass rounded-lg p-3 mt-2 text-xs text-gold-soft">
+          زمانی فرۆشگا
+          <select aria-label="زمانی فرۆشگا" value={storeLanguage} onChange={(event) => setStoreLanguage(event.target.value)} className={`${field} mt-2`}>
+            <option>کوردی</option><option>العربية</option><option>English</option>
+          </select>
+        </label>
+      )}
     </>
   );
 }

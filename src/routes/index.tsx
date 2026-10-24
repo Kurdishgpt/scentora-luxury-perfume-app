@@ -494,7 +494,7 @@ function Index() {
           <img className="detail-image" src={detail.image} alt={`${detail.name} perfume bottle, presented in rich green and gold light`} />
           <div className="detail-content">
             <button className="close-button" type="button" aria-label={t.close} onClick={() => setDetailId(null)}><X size={19} /></button>
-            <span className="eyebrow">{detail.tag} · {detail.category}</span>
+            <span className="eyebrow">{detail.tag} · {detail.categories.join(" · ")}</span>
             <h2 id="detail-heading">{detail.name}</h2>
             <Rating value={detail.rating} reviews={detail.reviews} />
             <p className="detail-description">{detail.description}</p>
