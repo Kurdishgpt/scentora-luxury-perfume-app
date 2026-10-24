@@ -226,8 +226,8 @@ function Bag({ lines, setLines }: { lines: Line[]; setLines: (l: Line[]) => void
     const msg = [
       "داواکاری نوێ لە سێنتۆرا 🌿", "", ...rows, "",
       `کۆی بەرهەم: ${money(sub)}`, `گەیاندن: ${money(SHIPPING)}`, `کۆی گشتی: ${money(total)}`, "",
-      name && `ناو: ${name}`, address && `ناونیشان: ${address}`,
-    ].filter((x) => x !== false && x !== "" || x === "").join("\n");
+      name ? `ناو: ${name}` : "", address ? `ناونیشان: ${address}` : "",
+    ].join("\n").trim();
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
