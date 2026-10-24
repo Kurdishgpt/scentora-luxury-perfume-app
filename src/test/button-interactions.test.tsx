@@ -40,27 +40,45 @@ describe("interactive buttons", () => {
     await renderAt("/");
 
     fireEvent.click(await screen.findByRole("button", { name: "Floral" }));
-    expect(screen.getByRole("button", { name: "Discover fragrance: Rosewater" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Discover fragrance: Oud Wood" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Discover fragrance: Rosewater" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Discover fragrance: Oud Wood" }),
+    ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Switch language to Kurdish, then Arabic" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Switch language to Kurdish, then Arabic" }),
+    );
     expect(screen.getByRole("main")).toHaveAttribute("lang", "ku");
   });
 
   it("saves product and inventory changes from the admin panel", async () => {
     await renderAt("/admin");
 
-    fireEvent.change(screen.getByRole("textbox", { name: /Product name/ }), { target: { value: "Sea Breeze" } });
-    fireEvent.change(screen.getByRole("textbox", { name: "Brand *" }), { target: { value: "Scentora" } });
-    fireEvent.change(screen.getByRole("textbox", { name: "Product image URL *" }), { target: { value: "https://example.com/sea-breeze.jpg" } });
-    fireEvent.change(screen.getByRole("textbox", { name: /Sizes and prices/ }), { target: { value: "50:88" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /Product name/ }), {
+      target: { value: "Sea Breeze" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Brand *" }), {
+      target: { value: "Scentora" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Product image URL *" }), {
+      target: { value: "https://example.com/sea-breeze.jpg" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /Sizes and prices/ }), {
+      target: { value: "50:88" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Add product" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Product added to the store.");
     expect(createProductFn).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("textbox", { name: "Sea Breeze product name" })).toHaveValue("Sea Breeze");
+    expect(screen.getByRole("textbox", { name: "Sea Breeze product name" })).toHaveValue(
+      "Sea Breeze",
+    );
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Oud Wood product name" }), { target: { value: "Oud Wood Reserve" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Oud Wood product name" }), {
+      target: { value: "Oud Wood Reserve" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save changes for Oud Wood" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Oud Wood Reserve saved.");
