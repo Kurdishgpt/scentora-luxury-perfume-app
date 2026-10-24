@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { getDatabase } from "@netlify/database";
 import oud from "@/assets/oud-wood.jpg";
 import rose from "@/assets/rosewater.jpg";
 import amber from "@/assets/hero-bottle.jpg";
@@ -66,15 +66,8 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
   },
 ];
 
-let pool: Pool | undefined;
-
 function getPool() {
-  const connectionString = process.env["DATABASE_URL"];
-  if (!connectionString) {
-    throw new Error("The database is not configured. Add the Replit database to this app before saving store data.");
-  }
-  pool ??= new Pool({ connectionString, max: 5, idleTimeoutMillis: 30_000 });
-  return pool;
+  return getDatabase().pool;
 }
 
 export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
