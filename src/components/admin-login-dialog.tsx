@@ -118,6 +118,16 @@ export function AdminLoginDialog({
           </button>
         </div>
         <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value="admin"
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
           <label className="grid gap-2 text-sm" htmlFor="admin-password">
             <span>{copy.password}</span>
             <span className="glass flex items-center gap-2 rounded-lg px-3">

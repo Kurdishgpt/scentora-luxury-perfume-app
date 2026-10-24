@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 
-vi.mock("@/lib/catalog.functions", () => ({
-  getStorefrontCatalogFn: async () => ({
+vi.mock("@/lib/catalog.functions", () => {
+  const catalog = {
     categories: ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"],
     whatsappNumber: "9647701575609",
     products: [
@@ -73,9 +73,60 @@ vi.mock("@/lib/catalog.functions", () => ({
         inStock: true,
       },
     ],
-  }),
-  signInAdminFn: vi.fn(async () => ({ ok: true })),
-}));
+  };
+  let nextProductId = 1;
+  let isAdmin = true;
+
+  return {
+    getStorefrontCatalogFn: vi.fn(async () => catalog),
+    getAdminSessionFn: vi.fn(async () => ({ isAdmin })),
+    getAdminCatalogFn: vi.fn(async () => catalog),
+    signInAdminFn: vi.fn(async () => {
+      isAdmin = true;
+      return { ok: true };
+    }),
+    signOutAdminFn: vi.fn(async () => {
+      isAdmin = false;
+      return { ok: true };
+    }),
+    createProductFn: vi.fn(async (input: { data: Record<string, unknown> }) => {
+      const product = {
+        ...input.data,
+        id: `created-${nextProductId++}`,
+        rating: 5,
+        reviews: 0,
+        tag: "New",
+        longevity: "—",
+        projection: "—",
+      };
+      catalog.products.unshift(product as (typeof catalog.products)[number]);
+      return catalog;
+    }),
+    updateProductFn: vi.fn(async (input: { data: { id: string; product: unknown } }) => {
+      const index = catalog.products.findIndex((product) => product.id === input.data.id);
+      if (index >= 0) {
+        catalog.products[index] = input.data.product as (typeof catalog.products)[number];
+      }
+      return catalog;
+    }),
+    deleteProductFn: vi.fn(async (input: { data: { id: string } }) => {
+      catalog.products = catalog.products.filter((product) => product.id !== input.data.id);
+      return catalog;
+    }),
+    updateCategoriesFn: vi.fn(async (input: { data: { categories: string[] } }) => {
+      catalog.categories = input.data.categories;
+      catalog.products = catalog.products.map((product) => ({
+        ...product,
+        categories: product.categories.filter((category) => catalog.categories.includes(category)),
+      }));
+      return catalog;
+    }),
+    updateWhatsappFn: vi.fn(async (input: { data: { whatsappNumber: string } }) => {
+      catalog.whatsappNumber = input.data.whatsappNumber;
+      return catalog;
+    }),
+  };
+});
 
 Object.defineProperty(window, "scrollTo", {
   writable: true,
