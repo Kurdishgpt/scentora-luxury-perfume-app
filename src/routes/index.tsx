@@ -1,66 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownRight, ArrowRight, ArrowUpRight, Check, Clock3, Citrus, Droplets, Flame,
   Flower2, Heart, Info, Leaf, Minus, Plus, Search, ShoppingBag, Sparkles, Star,
-  Trash2, TreePine, Wind, X,
+  Settings2, Trash2, TreePine, Wind, X,
 } from "lucide-react";
 import hero from "@/assets/hero-bottle.jpg";
-import oud from "@/assets/oud-wood.jpg";
-import rose from "@/assets/rosewater.jpg";
 import bokeh from "@/assets/bokeh-bg.jpg";
-
-export const WHATSAPP_NUMBER = "9647701575609";
+import { AdminLoginDialog } from "@/components/admin-login-dialog";
+import { getStorefrontCatalogFn } from "@/lib/catalog.functions";
+import type { CatalogProduct } from "@/lib/catalog-types";
 
 type Language = "en" | "ku" | "ar";
-type Category = "Citrus" | "Floral" | "Woody" | "Oriental" | "Fresh" | "Spicy";
-type Size = 30 | 50 | 100;
-type ProductId = "oud" | "rose" | "amber";
-type Product = {
-  id: ProductId;
-  name: string;
-  image: string;
-  subtitle: string;
-  categories: Category[];
-  price: Record<Size, number>;
-  rating: number;
-  reviews: number;
-  tag: string;
-  top: string;
-  heart: string;
-  base: string;
-  longevity: string;
-  projection: string;
-  description: string;
-};
+type Size = number;
+type ProductId = string;
+type Product = CatalogProduct;
 type CartLine = { id: ProductId; size: Size; quantity: number };
 
-const SIZES: Size[] = [30, 50, 100];
-const PRODUCTS: Product[] = [
-  {
-    id: "oud", name: "Oud Wood", image: oud, subtitle: "Smoky woods · quiet confidence",
-    categories: ["Woody", "Spicy"], price: { 30: 45, 50: 88, 100: 145 }, rating: 4.9, reviews: 128,
-    tag: "House favourite", top: "Cardamom · pink pepper", heart: "Oud · sandalwood",
-    base: "Vetiver · tonka bean", longevity: "8–10 hours", projection: "Intimate, then assured",
-    description: "A slow-burning composition of rare oud and polished woods. Warm, textured, and impossible to mistake for anyone else.",
-  },
-  {
-    id: "rose", name: "Rosewater", image: rose, subtitle: "Petal-soft · luminous",
-    categories: ["Floral", "Fresh", "Citrus"], price: { 30: 38, 50: 74, 100: 126 }, rating: 4.8, reviews: 94,
-    tag: "A softer ritual", top: "Bergamot · pear", heart: "Damask rose · peony",
-    base: "White musk · cedar", longevity: "6–8 hours", projection: "A graceful halo",
-    description: "Freshly gathered rose petals meet a clean, airy musk. An understated floral with a little light in every layer.",
-  },
-  {
-    id: "amber", name: "Amber Royal", image: hero, subtitle: "Golden amber · velvet spice",
-    categories: ["Oriental", "Spicy", "Citrus"], price: { 30: 52, 50: 102, 100: 168 }, rating: 4.7, reviews: 76,
-    tag: "The evening edit", top: "Saffron · mandarin", heart: "Amber · jasmine",
-    base: "Vanilla · labdanum", longevity: "9–12 hours", projection: "Rich, beautifully lasting",
-    description: "A luminous amber accord wrapped in saffron and soft vanilla. Made for the last light and the stories that follow.",
-  },
-];
-
-const CATEGORY_META: { name: Category; Icon: typeof Citrus; ku: string; ar: string }[] = [
+const CATEGORY_META: { name: string; Icon: typeof Citrus; ku: string; ar: string }[] = [
   { name: "Citrus", Icon: Citrus, ku: "ترش", ar: "حمضيات" },
   { name: "Floral", Icon: Flower2, ku: "گوڵاوی", ar: "زهري" },
   { name: "Woody", Icon: TreePine, ku: "داری", ar: "خشبي" },
@@ -73,6 +30,7 @@ const COPY = {
   en: {
     navCollection: "The collection", navStory: "Our philosophy", navNotes: "The notes",
     search: "Search fragrances", wishlist: "Wishlist", cart: "Shopping bag",
+    admin: "Admin settings", outOfStock: "Out of stock",
     kicker: "A fragrance, remembered", headlineA: "Discover Your", headlineB: "Signature Scent",
     description: "Rare compositions. A little ceremony. Find the fragrance that feels like it has always been yours.",
     explore: "Explore Scents", heroNote: "Curated in Kurdistan", allScents: "All scents",
@@ -103,6 +61,7 @@ const COPY = {
   ku: {
     navCollection: "کۆمەڵەکە", navStory: "دیدگای ئێمە", navNotes: "نۆتەکان",
     search: "گەڕان بەدوای بۆن", wishlist: "دڵخوازەکان", cart: "سەبەتە",
+    admin: "ڕێکخستنی ئەدمین", outOfStock: "لە کۆگا نەماوە",
     kicker: "بۆنێک کە لەبیر دەکرێت", headlineA: "کۆڵینەوە لە بۆنی", headlineB: "تایبەتی خۆت بکە",
     description: "تێکەڵەی دەگمەن. ڕێوڕەسمێکی جوان. ئەو بۆنە بدۆزەرەوە کە هەمیشە هی خۆت بووە.",
     explore: "دۆزینەوەی بۆنەکان", heroNote: "بە وردی هەڵبژێردراوە لە کوردستان",
@@ -133,6 +92,7 @@ const COPY = {
   ar: {
     navCollection: "المجموعة", navStory: "رؤيتنا", navNotes: "النفحات",
     search: "ابحث عن عطر", wishlist: "المفضلة", cart: "حقيبة التسوق",
+    admin: "إعدادات الإدارة", outOfStock: "غير متوفر",
     kicker: "عطر يبقى في الذاكرة", headlineA: "اكتشف عطرك", headlineB: "المميّز",
     description: "تركيبات نادرة، ولمسة من الطقوس الجميلة. اعثر على العطر الذي تشعر أنه كان لك دائماً.",
     explore: "اكتشف العطور", heroNote: "مختارة بعناية في كردستان", allScents: "كل العطور",
@@ -166,8 +126,12 @@ function formatMoney(amount: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
 }
 
-function whatsappHref(message: string) {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+function getPrice(product: Product, volume: number) {
+  return product.sizes.find((size) => size.volume === volume)?.price ?? product.sizes[0]?.price ?? 0;
+}
+
+function whatsappHref(number: string, message = "") {
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
 function LogoMark() {
@@ -190,35 +154,43 @@ function Rating({ value, reviews }: { value: number; reviews: number }) {
 }
 
 function Index() {
+  const { products, categories, whatsappNumber } = Route.useLoaderData();
+  const navigate = useNavigate();
   const [language, setLanguage] = useState<Language>("en");
-  const [category, setCategory] = useState<Category | "All">("All");
+  const [category, setCategory] = useState<string | "All">("All");
   const [query, setQuery] = useState("");
   const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [favourites, setFavourites] = useState<ProductId[]>([]);
   const [lines, setLines] = useState<CartLine[]>([]);
-  const [sizes, setSizes] = useState<Record<ProductId, Size>>({ oud: 50, rose: 50, amber: 50 });
+  const [sizes, setSizes] = useState<Record<ProductId, Size>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [detailId, setDetailId] = useState<ProductId | null>(null);
+  const [adminLoginOpen, setAdminLoginOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const t = COPY[language];
   const isRtl = language !== "en";
-  const detail = detailId ? PRODUCTS.find((product) => product.id === detailId) ?? null : null;
+  const detail = detailId ? products.find((product) => product.id === detailId) ?? null : null;
+  const selectedVolume = (product: Product) => {
+    const current = sizes[product.id];
+    if (current && product.sizes.some((size) => size.volume === current)) return current;
+    return product.sizes.find((size) => size.volume === 50)?.volume ?? product.sizes[0]?.volume ?? 50;
+  };
   const itemCount = lines.reduce((total, line) => total + line.quantity, 0);
 
-  const visibleProducts = useMemo(() => PRODUCTS.filter((product) => {
+  const visibleProducts = useMemo(() => products.filter((product) => {
     const matchesCategory = category === "All" || product.categories.includes(category);
     const matchesSearch = `${product.name} ${product.subtitle} ${product.categories.join(" ")} ${product.top} ${product.heart} ${product.base}`
       .toLowerCase().includes(query.trim().toLowerCase());
     const matchesFavourite = !favouritesOnly || favourites.includes(product.id);
     return matchesCategory && matchesSearch && matchesFavourite;
-  }), [category, query, favouritesOnly, favourites]);
+  }), [products, category, query, favouritesOnly, favourites]);
 
   const subtotal = lines.reduce((total, line) => {
-    const product = PRODUCTS.find((item) => item.id === line.id)!;
-    return total + product.price[line.size] * line.quantity;
+    const product = products.find((item) => item.id === line.id);
+    return total + (product ? getPrice(product, line.size) * line.quantity : 0);
   }, 0);
   const delivery = lines.length && subtotal < 150 ? 8 : 0;
   const total = subtotal + delivery;
@@ -241,13 +213,14 @@ function Index() {
   };
 
   const addToCart = (id: ProductId, size: Size) => {
+    const product = products.find((item) => item.id === id);
+    if (!product || !product.inStock) return;
     setLines((current) => {
       const existing = current.find((line) => line.id === id && line.size === size);
       return existing
         ? current.map((line) => line.id === id && line.size === size ? { ...line, quantity: line.quantity + 1 } : line)
         : [...current, { id, size, quantity: 1 }];
     });
-    const product = PRODUCTS.find((item) => item.id === id)!;
     showToast(`${product.name} · ${t.added}`);
   };
 
@@ -258,13 +231,14 @@ function Index() {
     ? current.filter((item) => item !== id) : [...current, id]);
 
   const makeOrderMessage = (selected: CartLine[], withCustomer = false) => {
-    const orderLines = selected.map((line) => {
-      const product = PRODUCTS.find((item) => item.id === line.id)!;
-      return `${product.name} — ${line.size} ml × ${line.quantity} = ${formatMoney(product.price[line.size] * line.quantity)}`;
+    const orderLines = selected.flatMap((line) => {
+      const product = products.find((item) => item.id === line.id);
+      if (!product) return [];
+      return [`${product.name} — ${line.size} ml × ${line.quantity} = ${formatMoney(getPrice(product, line.size) * line.quantity)}`];
     });
     const orderSubtotal = selected.reduce((sum, line) => {
-      const product = PRODUCTS.find((item) => item.id === line.id)!;
-      return sum + product.price[line.size] * line.quantity;
+      const product = products.find((item) => item.id === line.id);
+      return sum + (product ? getPrice(product, line.size) * line.quantity : 0);
     }, 0);
     const orderDelivery = orderSubtotal >= 150 ? 0 : 8;
     return [
@@ -301,6 +275,9 @@ function Index() {
           <button className="icon-button" type="button" aria-label={`${t.cart}, ${itemCount} items`} title={t.cart} onClick={() => setCartOpen(true)}>
             <ShoppingBag size={18} strokeWidth={1.5} />{itemCount > 0 && <span className="cart-count">{itemCount}</span>}
           </button>
+          <button className="icon-button" type="button" aria-label={t.admin} title={t.admin} onClick={() => setAdminLoginOpen(true)}>
+            <Settings2 size={18} strokeWidth={1.5} />
+          </button>
           <button className="lang-toggle" type="button" onClick={() => setLanguage(language === "en" ? "ku" : language === "ku" ? "ar" : "en")}
             aria-label={language === "en" ? "Switch language to Kurdish, then Arabic" : language === "ku" ? "گۆڕینی زمان بۆ عەرەبی" : "التبديل إلى الإنجليزية"}
             title="English · کوردی · العربية">{language === "en" ? "کوردی · العربية" : language === "ku" ? "العربية" : "EN · کوردی"}</button>
@@ -334,12 +311,16 @@ function Index() {
           <button className={`category-button${category === "All" ? " active" : ""}`} type="button" onClick={() => setCategory("All")}>
             <Leaf size={20} strokeWidth={1.3} /><span>{t.allScents}</span>
           </button>
-          {CATEGORY_META.map(({ name, Icon, ku, ar }) => (
+          {categories.map((name) => {
+            const meta = CATEGORY_META.find((item) => item.name === name);
+            const Icon = meta?.Icon ?? Sparkles;
+            return (
             <button className={`category-button${category === name ? " active" : ""}`} type="button" key={name}
               aria-pressed={category === name} onClick={() => setCategory(category === name ? "All" : name)}>
-              <Icon size={20} strokeWidth={1.3} /><span>{language === "ku" ? ku : language === "ar" ? ar : name}</span>
+              <Icon size={20} strokeWidth={1.3} /><span>{language === "ku" && meta ? meta.ku : language === "ar" && meta ? meta.ar : name}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
 
         <div className="section collection-section">
@@ -353,7 +334,7 @@ function Index() {
           </div>
           <div className="product-grid">
             {visibleProducts.map((product) => {
-              const size = sizes[product.id];
+              const size = selectedVolume(product);
               const cardOrder = makeOrderMessage([{ id: product.id, size, quantity: 1 }]);
               const isFavourite = favourites.includes(product.id);
               return (
@@ -368,25 +349,25 @@ function Index() {
                       aria-pressed={isFavourite} onClick={() => toggleFavourite(product.id)}>
                       <Heart size={17} strokeWidth={1.6} fill={isFavourite ? "currentColor" : "none"} />
                     </button>
-                    <div className="image-caption"><span>EAU DE PARFUM</span><span>NO. 0{PRODUCTS.indexOf(product) + 1}</span></div>
+                    <div className="image-caption"><span>EAU DE PARFUM</span><span>NO. {String(products.indexOf(product) + 1).padStart(2, "0")}</span></div>
                   </div>
                   <div className="product-info">
-                    <div className="product-title-row"><h3 className="serif product-title">{product.name}</h3><span className="product-price">{formatMoney(product.price[size])}</span></div>
+                    <div className="product-title-row"><h3 className="serif product-title">{product.name}</h3><span className="product-price">{formatMoney(getPrice(product, size))}</span></div>
                     <p className="product-subtitle">{product.subtitle}</p>
                     <Rating value={product.rating} reviews={product.reviews} />
                     <div className="product-foot">
                       <label>
                         <span className="sr-only">{t.volume}</span>
                         <select className="volume-select" value={size} onChange={(event) => setSizes((current) => ({ ...current, [product.id]: Number(event.target.value) as Size }))} aria-label={`${product.name} ${t.volume}`}>
-                          {SIZES.map((option) => <option key={option} value={option}>{option} ml</option>)}
+                          {product.sizes.map((option) => <option key={option.volume} value={option.volume}>{option.volume} ml</option>)}
                         </select>
                       </label>
                       <div className="card-actions">
-                        <a className="wa-link" href={whatsappHref(cardOrder)} target="_blank" rel="noreferrer"
+                        {product.inStock ? <a className="wa-link" href={whatsappHref(whatsappNumber, cardOrder)} target="_blank" rel="noreferrer"
                           aria-label={`Order ${product.name}, ${size} ml, directly via WhatsApp`}>
                           {t.cardOrder} <ArrowUpRight size={13} aria-hidden="true" />
-                        </a>
-                        <button className="add-mini" type="button" onClick={() => addToCart(product.id, size)} aria-label={`${t.add}: ${product.name}, ${size} ml`}>
+                        </a> : <span className="wa-link" aria-label={t.outOfStock}>{t.outOfStock}</span>}
+                        <button className="add-mini" type="button" disabled={!product.inStock} onClick={() => addToCart(product.id, size)} aria-label={`${t.add}: ${product.name}, ${size} ml`}>
                           <Plus size={17} />
                         </button>
                       </div>
@@ -445,7 +426,7 @@ function Index() {
       <footer className="footer">
         <a className="brand-lockup" href="#home"><LogoMark /><span className="serif brand-name">Maya Collection</span></a>
         <span>{t.footerLine}</span>
-        <div className="footer-links"><a href="#collection">{t.navCollection}</a><a href="#philosophy">{t.navStory}</a><a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">WhatsApp</a></div>
+        <div className="footer-links"><a href="#collection">{t.navCollection}</a><a href="#philosophy">{t.navStory}</a><a href={whatsappHref(whatsappNumber)} target="_blank" rel="noreferrer">WhatsApp</a></div>
         <span>{t.copyright}</span>
       </footer>
 
@@ -460,10 +441,11 @@ function Index() {
           </div> : <>
             <div className="cart-items">
               {lines.map((line, index) => {
-                const product = PRODUCTS.find((item) => item.id === line.id)!;
+                const product = products.find((item) => item.id === line.id);
+                if (!product) return null;
                 return <div className="cart-item" key={`${line.id}-${line.size}`}>
                   <img src={product.image} alt={`${product.name} perfume bottle`} />
-                  <div><h3>{product.name}</h3><p>{formatMoney(product.price[line.size])}</p><p className="cart-item-meta">{line.size} ml · {product.categories.join(" · ")}</p>
+                  <div><h3>{product.name}</h3><p>{formatMoney(getPrice(product, line.size))}</p><p className="cart-item-meta">{line.size} ml · {product.categories.join(" · ")}</p>
                     <div className="quantity-control">
                       <button type="button" aria-label={t.increase} onClick={() => updateQuantity(index, 1)}><Plus size={12} /></button>
                       <span>{line.quantity}</span>
@@ -482,7 +464,7 @@ function Index() {
             <div className="cart-total"><span>{t.subtotal}</span><span>{formatMoney(subtotal)}</span></div>
             <div className="cart-total"><span>{t.delivery}</span><span>{delivery ? formatMoney(delivery) : "Complimentary"}</span></div>
             <div className="cart-total final"><span>{t.total}</span><strong>{formatMoney(total)}</strong></div>
-            <a className="gold-button checkout-link" href={whatsappHref(makeOrderMessage(lines, true))} target="_blank" rel="noreferrer">
+            <a className="gold-button checkout-link" href={whatsappHref(whatsappNumber, makeOrderMessage(lines, true))} target="_blank" rel="noreferrer">
               {t.checkout}<ArrowRight size={17} />
             </a>
           </>}
@@ -498,11 +480,11 @@ function Index() {
             <h2 id="detail-heading">{detail.name}</h2>
             <Rating value={detail.rating} reviews={detail.reviews} />
             <p className="detail-description">{detail.description}</p>
-            <div className="product-title-row"><span className="eyebrow">{t.volume}</span><span className="detail-price">{formatMoney(detail.price[sizes[detail.id]])}</span></div>
+            <div className="product-title-row"><span className="eyebrow">{t.volume}</span><span className="detail-price">{formatMoney(getPrice(detail, selectedVolume(detail)))}</span></div>
             <label><span className="sr-only">{detail.name} {t.volume}</span>
               <select className="volume-select" style={{ marginTop: 10, border: "1px solid var(--border)", padding: "10px 13px", minWidth: 135, background: "#19372a" }}
-                value={sizes[detail.id]} onChange={(event) => setSizes((current) => ({ ...current, [detail.id]: Number(event.target.value) as Size }))}>
-                {SIZES.map((size) => <option key={size} value={size}>{size} ml · {formatMoney(detail.price[size])}</option>)}
+                value={selectedVolume(detail)} onChange={(event) => setSizes((current) => ({ ...current, [detail.id]: Number(event.target.value) }))}>
+                {detail.sizes.map((size) => <option key={size.volume} value={size.volume}>{size.volume} ml · {formatMoney(size.price)}</option>)}
               </select>
             </label>
             <div className="detail-notes" aria-label={t.notes}>
@@ -514,19 +496,29 @@ function Index() {
               <span title="Typical wear time; varies by skin and environment"><Clock3 size={13} style={{ verticalAlign: "middle", marginInlineEnd: 5 }} />{t.longevity}: {detail.longevity}</span>
               <span title="How far the scent gently carries from the skin"><Wind size={13} style={{ verticalAlign: "middle", marginInlineEnd: 5 }} />{t.projection}: {detail.projection}</span>
             </div>
-            <button className="gold-button detail-add" type="button" onClick={() => { addToCart(detail.id, sizes[detail.id]); setDetailId(null); }}>
-              <ShoppingBag size={16} />{t.detailAdd}
+            <button className="gold-button detail-add" type="button" disabled={!detail.inStock} onClick={() => { addToCart(detail.id, selectedVolume(detail)); setDetailId(null); }}>
+              <ShoppingBag size={16} />{detail.inStock ? t.detailAdd : t.outOfStock}
             </button>
           </div>
         </section>
       </div>}
 
       {toast && <div className="toast" role="status"><Check size={15} style={{ verticalAlign: "middle", marginInlineEnd: 7 }} />{toast}</div>}
+      <AdminLoginDialog
+        open={adminLoginOpen}
+        onClose={() => setAdminLoginOpen(false)}
+        onSuccess={() => {
+          setAdminLoginOpen(false);
+          void navigate({ to: "/admin" });
+        }}
+        language={language}
+      />
     </main>
   );
 }
 
 export const Route = createFileRoute("/")({
+  loader: () => getStorefrontCatalogFn(),
   head: () => ({
     meta: [
       { title: "Maya Collection — Discover Your Signature Scent" },
