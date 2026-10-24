@@ -1,2 +1,3 @@
 - [Zod 3 derived schemas](zod-derived-schemas.md) — derive `.pick()`/`.omit()` variants before `.refine()`, then reapply shared refinements.
 - [Portable package locks](portable-package-locks.md) — external CI cannot fetch dependencies from Replit-private tarball URLs embedded in Bun lockfiles.
+- [Vercel production setup](vercel-production-setup.md) — use a separate production PostgreSQL database, keep admin credentials server-side, and prefer `e-app.vercel.app` if attachable.

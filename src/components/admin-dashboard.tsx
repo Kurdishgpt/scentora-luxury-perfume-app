@@ -115,7 +115,14 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
       if (!draft.name.trim() || !draft.brand.trim() || !draft.image.trim()) {
         throw new Error("Enter the product name and brand, then choose a product image.");
       }
-      const categories = [...new Set(draft.categories.split(",").map((item) => item.trim()).filter(Boolean))];
+      const categories = [
+        ...new Set(
+          draft.categories
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        ),
+      ];
       const product = {
         name: draft.name.trim(),
         brand: draft.brand.trim(),
@@ -257,7 +264,10 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
             </p>
           </div>
           <div className="flex gap-3">
-            <a href="/" className="outline-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm">
+            <a
+              href="/"
+              className="outline-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm"
+            >
               <ArrowLeft size={16} /> Storefront
             </a>
             <button
@@ -266,7 +276,11 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
               disabled={pendingAction !== ""}
               className="outline-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm disabled:opacity-50"
             >
-              {pendingAction === "signout" ? <LoaderCircle className="animate-spin" size={16} /> : <LogOut size={16} />}
+              {pendingAction === "signout" ? (
+                <LoaderCircle className="animate-spin" size={16} />
+              ) : (
+                <LogOut size={16} />
+              )}
               Sign out
             </button>
           </div>
@@ -308,18 +322,30 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
               <PackagePlus className="text-gold" />
               <div>
                 <h2 className="text-xl font-semibold">Add a product</h2>
-                <p className="text-sm text-muted-foreground">Required details are marked with an asterisk.</p>
+                <p className="text-sm text-muted-foreground">
+                  Required details are marked with an asterisk.
+                </p>
               </div>
             </div>
             <form className="grid gap-4" onSubmit={handleCreateProduct}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className={labelClass}>
                   Product name *
-                  <input className={inputClass} maxLength={120} value={draft.name} onChange={(event) => updateDraft("name", event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={120}
+                    value={draft.name}
+                    onChange={(event) => updateDraft("name", event.target.value)}
+                  />
                 </label>
                 <label className={labelClass}>
                   Brand *
-                  <input className={inputClass} maxLength={120} value={draft.brand} onChange={(event) => updateDraft("brand", event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={120}
+                    value={draft.brand}
+                    onChange={(event) => updateDraft("brand", event.target.value)}
+                  />
                 </label>
               </div>
               <div className={labelClass}>
@@ -331,9 +357,13 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
                   className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-[var(--gold)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--deep)]`}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/avif"
-                  onChange={(event) => void handleProductImageChange(event.currentTarget.files?.[0])}
+                  onChange={(event) =>
+                    void handleProductImageChange(event.currentTarget.files?.[0])
+                  }
                 />
-                <p className="text-xs">Choose a photo from your device’s gallery (JPEG, PNG, WebP, or AVIF; max 2 MB).</p>
+                <p className="text-xs">
+                  Choose a photo from your device’s gallery (JPEG, PNG, WebP, or AVIF; max 2 MB).
+                </p>
                 {draft.image && (
                   <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-2">
                     <img
@@ -356,39 +386,86 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
               </div>
               <label className={labelClass}>
                 Short description
-                <input className={inputClass} maxLength={240} value={draft.subtitle} onChange={(event) => updateDraft("subtitle", event.target.value)} />
+                <input
+                  className={inputClass}
+                  maxLength={240}
+                  value={draft.subtitle}
+                  onChange={(event) => updateDraft("subtitle", event.target.value)}
+                />
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className={labelClass}>
                   Categories (comma-separated)
-                  <input className={inputClass} maxLength={400} placeholder="Floral, Fresh" value={draft.categories} onChange={(event) => updateDraft("categories", event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={400}
+                    placeholder="Floral, Fresh"
+                    value={draft.categories}
+                    onChange={(event) => updateDraft("categories", event.target.value)}
+                  />
                 </label>
                 <label className={labelClass}>
                   Sizes and prices *
-                  <input className={inputClass} value={draft.sizes} onChange={(event) => updateDraft("sizes", event.target.value)} aria-describedby="size-format-help" />
-                  <span id="size-format-help" className="text-xs">Use volume:price pairs, e.g. 30:45, 50:88</span>
+                  <input
+                    className={inputClass}
+                    value={draft.sizes}
+                    onChange={(event) => updateDraft("sizes", event.target.value)}
+                    aria-describedby="size-format-help"
+                  />
+                  <span id="size-format-help" className="text-xs">
+                    Use volume:price pairs, e.g. 30:45, 50:88
+                  </span>
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <label className={labelClass}>
                   Top notes
-                  <input className={inputClass} maxLength={240} value={draft.top} onChange={(event) => updateDraft("top", event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={240}
+                    value={draft.top}
+                    onChange={(event) => updateDraft("top", event.target.value)}
+                  />
                 </label>
                 <label className={labelClass}>
                   Heart notes
-                  <input className={inputClass} maxLength={240} value={draft.heart} onChange={(event) => updateDraft("heart", event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={240}
+                    value={draft.heart}
+                    onChange={(event) => updateDraft("heart", event.target.value)}
+                  />
                 </label>
                 <label className={labelClass}>
                   Base notes
-                  <input className={inputClass} maxLength={240} value={draft.base} onChange={(event) => updateDraft("base", event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={240}
+                    value={draft.base}
+                    onChange={(event) => updateDraft("base", event.target.value)}
+                  />
                 </label>
               </div>
               <label className={labelClass}>
                 Full description
-                <textarea className={inputClass} rows={3} maxLength={2000} value={draft.description} onChange={(event) => updateDraft("description", event.target.value)} />
+                <textarea
+                  className={inputClass}
+                  rows={3}
+                  maxLength={2000}
+                  value={draft.description}
+                  onChange={(event) => updateDraft("description", event.target.value)}
+                />
               </label>
-              <button type="submit" disabled={pendingAction !== ""} className="btn-gold inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 font-semibold disabled:cursor-wait disabled:opacity-60">
-                {pendingAction === "save" ? <LoaderCircle className="animate-spin" size={17} /> : <Save size={17} />}
+              <button
+                type="submit"
+                disabled={pendingAction !== ""}
+                className="btn-gold inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 font-semibold disabled:cursor-wait disabled:opacity-60"
+              >
+                {pendingAction === "save" ? (
+                  <LoaderCircle className="animate-spin" size={17} />
+                ) : (
+                  <Save size={17} />
+                )}
                 Add product
               </button>
             </form>
@@ -398,7 +475,9 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
             <section className="glass rounded-2xl p-5 sm:p-6">
               <div className="mb-5">
                 <h2 className="text-xl font-semibold">Products and stock</h2>
-                <p className="text-sm text-muted-foreground">Edit a product, then press Save to publish the change.</p>
+                <p className="text-sm text-muted-foreground">
+                  Edit a product, then press Save to publish the change.
+                </p>
               </div>
               {catalog.products.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-[var(--border)] p-6 text-center text-sm text-muted-foreground">
@@ -410,7 +489,10 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
                     const edited = edits[product.id] ?? product;
                     const firstSize = edited.sizes[0] ?? { volume: 50, price: 0 };
                     return (
-                      <article key={product.id} className="rounded-xl border border-[var(--border)] bg-[var(--deep)]/30 p-4">
+                      <article
+                        key={product.id}
+                        className="rounded-xl border border-[var(--border)] bg-[var(--deep)]/30 p-4"
+                      >
                         <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
                           <label className={labelClass}>
                             Product name
@@ -419,7 +501,9 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
                               value={edited.name}
                               maxLength={120}
                               aria-label={`${product.name} product name`}
-                              onChange={(event) => editProduct(product, { name: event.target.value })}
+                              onChange={(event) =>
+                                editProduct(product, { name: event.target.value })
+                              }
                             />
                           </label>
                           <label className={labelClass}>
@@ -434,7 +518,9 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
                               onChange={(event) =>
                                 editProduct(product, {
                                   sizes: edited.sizes.map((size, index) =>
-                                    index === 0 ? { ...size, price: Number(event.target.value) } : size,
+                                    index === 0
+                                      ? { ...size, price: Number(event.target.value) }
+                                      : size,
                                   ),
                                 })
                               }
@@ -494,22 +580,40 @@ export function AdminDashboard({ initialCatalog }: { initialCatalog: StorefrontC
                     onChange={(event) => setWhatsappNumber(event.target.value)}
                   />
                 </label>
-                <button type="submit" disabled={pendingAction !== ""} className="btn-gold self-end rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={pendingAction !== ""}
+                  className="btn-gold self-end rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                >
                   Save number
                 </button>
               </form>
               <form className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]" onSubmit={addCategory}>
                 <label className={labelClass}>
                   Add a category
-                  <input className={inputClass} maxLength={48} value={newCategory} onChange={(event) => setNewCategory(event.target.value)} />
+                  <input
+                    className={inputClass}
+                    maxLength={48}
+                    value={newCategory}
+                    onChange={(event) => setNewCategory(event.target.value)}
+                  />
                 </label>
-                <button type="submit" disabled={pendingAction !== ""} className="btn-gold self-end rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={pendingAction !== ""}
+                  className="btn-gold self-end rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+                >
                   Add category
                 </button>
               </form>
               <div className="mt-4 flex flex-wrap gap-2" aria-label="Current categories">
                 {catalog.categories.map((category) => (
-                  <span key={category} className="glass rounded-full px-3 py-1.5 text-xs text-gold-soft">{category}</span>
+                  <span
+                    key={category}
+                    className="glass rounded-full px-3 py-1.5 text-xs text-gold-soft"
+                  >
+                    {category}
+                  </span>
                 ))}
               </div>
             </section>
