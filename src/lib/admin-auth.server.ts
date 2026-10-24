@@ -1,5 +1,5 @@
 import { getRequestIP } from "@tanstack/react-start/server";
-import { useSession } from "@tanstack/react-start/server";
+import { useSession as getSession } from "@tanstack/react-start/server";
 
 const SESSION_NAME = "__Host-maya-admin";
 const SESSION_MAX_AGE = 60 * 60 * 12;
@@ -14,7 +14,7 @@ async function getAdminSession() {
   if (!secret || secret.length < 32) {
     throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
   }
-  return useSession<AdminSessionData>({
+  return getSession<AdminSessionData>({
     name: SESSION_NAME,
     password: secret,
     maxAge: SESSION_MAX_AGE,
@@ -49,9 +49,8 @@ export async function signInAdmin(password: string) {
 
   const valid = await matchesConfiguredPassword(password);
   if (!valid) {
-    const current = attempts && attempts.resetAt > now
-      ? attempts
-      : { count: 0, resetAt: now + LOGIN_WINDOW_MS };
+    const current =
+      attempts && attempts.resetAt > now ? attempts : { count: 0, resetAt: now + LOGIN_WINDOW_MS };
     current.count += 1;
     loginAttempts.set(ip, current);
     throw new Error("Incorrect admin password.");

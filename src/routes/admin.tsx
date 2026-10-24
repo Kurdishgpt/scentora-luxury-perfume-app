@@ -7,7 +7,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Scentora Admin — Store Management" },
-      { name: "description", content: "Manage products, stock, categories, and store contact details." },
+      {
+        name: "description",
+        content: "Manage products, stock, categories, and store contact details.",
+      },
     ],
   }),
   loader: async () => {
@@ -42,7 +45,9 @@ function Admin() {
       <main className="flex min-h-screen items-center justify-center bg-background px-4">
         <section className="glass max-w-lg rounded-2xl p-6 text-center">
           <h1 className="text-2xl font-semibold text-gold-soft">Admin page couldn’t load</h1>
-          <p role="alert" className="mt-3 text-sm text-muted-foreground">{error}</p>
+          <p role="alert" className="mt-3 text-sm text-muted-foreground">
+            {error}
+          </p>
           <button
             type="button"
             onClick={() => void router.invalidate()}

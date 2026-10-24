@@ -4,7 +4,14 @@ import rose from "@/assets/rosewater.jpg";
 import amber from "@/assets/hero-bottle.jpg";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
-const DEFAULT_CATEGORIES: CatalogCategory[] = ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"];
+const DEFAULT_CATEGORIES: CatalogCategory[] = [
+  "Citrus",
+  "Floral",
+  "Woody",
+  "Oriental",
+  "Fresh",
+  "Spicy",
+];
 
 const DEFAULT_PRODUCTS: CatalogProduct[] = [
   {
@@ -14,7 +21,11 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     image: oud,
     subtitle: "Smoky woods · quiet confidence",
     categories: ["Woody", "Spicy"],
-    sizes: [{ volume: 30, price: 45 }, { volume: 50, price: 88 }, { volume: 100, price: 145 }],
+    sizes: [
+      { volume: 30, price: 45 },
+      { volume: 50, price: 88 },
+      { volume: 100, price: 145 },
+    ],
     rating: 4.9,
     reviews: 128,
     tag: "House favourite",
@@ -23,7 +34,8 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     base: "Vetiver · tonka bean",
     longevity: "8–10 hours",
     projection: "Intimate, then assured",
-    description: "A slow-burning composition of rare oud and polished woods. Warm, textured, and impossible to mistake for anyone else.",
+    description:
+      "A slow-burning composition of rare oud and polished woods. Warm, textured, and impossible to mistake for anyone else.",
     inStock: true,
   },
   {
@@ -33,7 +45,11 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     image: rose,
     subtitle: "Petal-soft · luminous",
     categories: ["Floral", "Fresh", "Citrus"],
-    sizes: [{ volume: 30, price: 38 }, { volume: 50, price: 74 }, { volume: 100, price: 126 }],
+    sizes: [
+      { volume: 30, price: 38 },
+      { volume: 50, price: 74 },
+      { volume: 100, price: 126 },
+    ],
     rating: 4.8,
     reviews: 94,
     tag: "A softer ritual",
@@ -42,7 +58,8 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     base: "White musk · cedar",
     longevity: "6–8 hours",
     projection: "A graceful halo",
-    description: "Freshly gathered rose petals meet a clean, airy musk. An understated floral with a little light in every layer.",
+    description:
+      "Freshly gathered rose petals meet a clean, airy musk. An understated floral with a little light in every layer.",
     inStock: true,
   },
   {
@@ -52,7 +69,11 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     image: amber,
     subtitle: "Golden amber · velvet spice",
     categories: ["Oriental", "Spicy", "Citrus"],
-    sizes: [{ volume: 30, price: 52 }, { volume: 50, price: 102 }, { volume: 100, price: 168 }],
+    sizes: [
+      { volume: 30, price: 52 },
+      { volume: 50, price: 102 },
+      { volume: 100, price: 168 },
+    ],
     rating: 4.7,
     reviews: 76,
     tag: "The evening edit",
@@ -61,7 +82,8 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     base: "Vanilla · labdanum",
     longevity: "9–12 hours",
     projection: "Rich, beautifully lasting",
-    description: "A luminous amber accord wrapped in saffron and soft vanilla. Made for the last light and the stories that follow.",
+    description:
+      "A luminous amber accord wrapped in saffron and soft vanilla. Made for the last light and the stories that follow.",
     inStock: true,
   },
 ];
@@ -71,7 +93,9 @@ let pool: Pool | undefined;
 function getPool() {
   const connectionString = process.env["DATABASE_URL"];
   if (!connectionString) {
-    throw new Error("The database is not configured. Add the Replit database to this app before saving store data.");
+    throw new Error(
+      "The database is not configured. Add the Replit database to this app before saving store data.",
+    );
   }
   pool ??= new Pool({ connectionString, max: 5, idleTimeoutMillis: 30_000 });
   return pool;
@@ -107,11 +131,19 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
      VALUES (TRUE, $1::jsonb, $2::jsonb, $3)
      ON CONFLICT (singleton) DO UPDATE SET singleton = TRUE
      RETURNING products, categories, whatsapp_number`,
-    [JSON.stringify(defaults.products), JSON.stringify(defaults.categories), defaults.whatsappNumber],
+    [
+      JSON.stringify(defaults.products),
+      JSON.stringify(defaults.categories),
+      defaults.whatsappNumber,
+    ],
   );
   const row = inserted.rows[0];
   if (!row) throw new Error("Could not initialize store data.");
-  return { products: row.products, categories: row.categories, whatsappNumber: row.whatsapp_number };
+  return {
+    products: row.products,
+    categories: row.categories,
+    whatsappNumber: row.whatsapp_number,
+  };
 }
 
 export async function saveStorefrontCatalog(catalog: StorefrontCatalog) {
