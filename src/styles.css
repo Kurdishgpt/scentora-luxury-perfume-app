@@ -3,8 +3,8 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --font-serif: "Cormorant Garamond", Georgia, serif;
-  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-serif: "Noto Naskh Arabic", Georgia, serif;
+  --font-sans: "Noto Kufi Arabic", system-ui, sans-serif;
   --radius-lg: 1.25rem;
   --radius-xl: 1.75rem;
   --color-background: var(--background);
