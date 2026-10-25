@@ -103,9 +103,9 @@ a { color: inherit; }
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(370px, .95fr); align-items: center;
   padding: 112px clamp(24px, 10vw, 160px) 76px; overflow: hidden;
 }
-.hero::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, #10271d 4%, rgba(16,39,29,.96) 34%, rgba(16,39,29,.56) 62%, rgba(16,39,29,.16)), linear-gradient(0deg, #10271d 0%, transparent 24%, transparent 75%, rgba(10,24,17,.35)); }
+.hero::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, #082821 4%, rgba(8,40,33,.94) 34%, rgba(8,40,33,.5) 62%, rgba(8,40,33,.08)), linear-gradient(0deg, #082821 0%, transparent 24%, transparent 75%, rgba(4,24,19,.32)); }
 .hero::after { content: ""; position: absolute; width: 600px; height: 600px; right: 8%; top: 6%; border-radius: 50%; background: radial-gradient(circle, rgba(202,166,92,.23), rgba(202,166,92,.04) 45%, transparent 70%); filter: blur(12px); animation: ambient 8s ease-in-out infinite alternate; }
-.hero-art { position: absolute; right: 4%; top: 0; width: min(65vw, 880px); height: 100%; object-fit: cover; object-position: center 48%; opacity: .86; mix-blend-mode: screen; }
+.hero-art { position: absolute; right: 2%; top: 0; width: min(68vw, 920px); height: 100%; object-fit: cover; object-position: center 44%; opacity: .96; }
 .hero-copy { position: relative; z-index: 3; max-width: 625px; padding-top: 24px; }
 .hero-kicker { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
 .hero-kicker::before { content: ""; width: 38px; height: 1px; background: var(--gold); }
@@ -255,7 +255,7 @@ a { color: inherit; }
 
 [dir="rtl"] .hero { grid-template-columns: minmax(370px,.95fr) minmax(0,1fr); }
 [dir="rtl"] .hero-art { right: auto; left: 4%; }
-[dir="rtl"] .hero::before { background: linear-gradient(270deg, #10271d 4%, rgba(16,39,29,.96) 34%, rgba(16,39,29,.56) 62%, rgba(16,39,29,.16)), linear-gradient(0deg, #10271d 0%, transparent 24%, transparent 75%, rgba(10,24,17,.35)); }
+[dir="rtl"] .hero::before { background: linear-gradient(270deg, #082821 4%, rgba(8,40,33,.94) 34%, rgba(8,40,33,.5) 62%, rgba(8,40,33,.08)), linear-gradient(0deg, #082821 0%, transparent 24%, transparent 75%, rgba(4,24,19,.32)); }
 [dir="rtl"] .hero-copy { grid-column: 2; }
 [dir="rtl"] .hero-index { left: auto; right: clamp(24px,6vw,88px); }
 [dir="rtl"] .hero-stamp { right: auto; left: 7.5%; }
@@ -271,8 +271,8 @@ a { color: inherit; }
   .topbar { height: 78px; padding: 0 24px; }
   .top-links { display: none; }
   .hero { min-height: 760px; grid-template-columns: 1fr; padding: 150px 7vw 86px; align-items: end; }
-  .hero-art { width: 100%; height: 78%; right: 0; top: 0; object-position: center 38%; opacity: .72; }
-  .hero::before { background: linear-gradient(0deg, #10271d 7%, rgba(16,39,29,.93) 33%, rgba(16,39,29,.23) 75%, rgba(16,39,29,.12)); }
+  .hero-art { width: 100%; height: 82%; right: 0; top: 0; object-position: center 39%; opacity: .94; }
+  .hero::before { background: linear-gradient(0deg, #082821 7%, rgba(8,40,33,.91) 33%, rgba(8,40,33,.19) 75%, rgba(8,40,33,.08)); }
   .hero-copy { max-width: 640px; padding: 0 0 22px; }
   .hero h1 { font-size: clamp(4rem, 10vw, 6.5rem); }
   .hero-stamp { right: 8%; bottom: auto; top: 30%; width: 100px; height: 100px; font-size: .5rem; }
@@ -293,8 +293,8 @@ a { color: inherit; }
   .icon-button { width: 36px; height: 36px; }
   .lang-toggle { padding: 7px 8px; font-size: .61rem; }
   .hero { min-height: 730px; padding: 130px 24px 88px; }
-  .hero-art { height: 67%; object-position: 52% 35%; opacity: .72; }
-  .hero::before { background: linear-gradient(0deg, #10271d 5%, rgba(16,39,29,.95) 33%, rgba(16,39,29,.14) 81%); }
+  .hero-art { height: 75%; object-position: 45% 36%; opacity: .96; }
+  .hero::before { background: linear-gradient(0deg, #082821 5%, rgba(8,40,33,.94) 33%, rgba(8,40,33,.13) 81%); }
   .hero-copy { padding-bottom: 10px; }
   .hero-kicker { margin-bottom: 18px; }
   .hero h1 { font-size: clamp(3.7rem, 17vw, 5.2rem); line-height: .87; }

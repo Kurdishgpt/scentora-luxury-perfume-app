@@ -2,3 +2,4 @@
 - [Portable package locks](portable-package-locks.md) — inspect resolved hosts; rewrite only private mirrors for public packages, preserving versions and integrity.
 - [Netlify production setup](netlify-production-setup.md) — use separate production PostgreSQL and keep admin credentials server-side in Netlify settings.
 - [Stable catalog image URLs](catalog-image-paths.md) — persisted product images must use stable public paths, not Vite development or build-hash URLs.
+- [Storefront location](storefront-location.md) — Maya Collection’s listed location is Sulaymani, Iraq, localized in Kurdish and Arabic.

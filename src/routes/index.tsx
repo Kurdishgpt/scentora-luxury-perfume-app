@@ -5,7 +5,6 @@ import {
   Flower2, Heart, Info, Leaf, Minus, Plus, Search, ShoppingBag, Sparkles, Star,
   Settings2, Trash2, TreePine, Wind, X,
 } from "lucide-react";
-import hero from "@/assets/hero-bottle.jpg";
 import bokeh from "@/assets/bokeh-bg.jpg";
 import { AdminLoginDialog } from "@/components/admin-login-dialog";
 import { getStorefrontCatalogFn } from "@/lib/catalog.functions";
@@ -54,7 +53,7 @@ const COPY = {
     noteHeartTitle: "The true character", noteHeartText: "The heart opens slowly, revealing the personality at the centre of the scent.",
     noteBaseTitle: "What remains", noteBaseText: "Warm, lasting accords settle into the skin and leave a beautiful trace.",
     closingEyebrow: "Your next memory", closingTitle: "Let scent find you.", closingCta: "Find your fragrance",
-    footerLine: "Fragrance, chosen to feel like you.", copyright: "Maya Collection · Erbil, Iraq",
+    footerLine: "Fragrance, chosen to feel like you.", copyright: "Maya Collection · Sulaymani, Iraq",
     waItem: "Hello Maya Collection, I would like to order:",
     freeDelivery: "Complimentary delivery on orders over $150",
   },
@@ -86,7 +85,7 @@ const COPY = {
     noteBaseTitle: "ئەوەی دەمێنێتەوە", noteBaseText: "نۆتە گەرم و بەردەوامەکان لەسەر پێست جێگیر دەبن و شوێنێکی جوان دەمێنن.",
     closingEyebrow: "بیرەوەریی داهاتووت", closingTitle: "با بۆنەکە دەت بدۆزێتەوە.",
     closingCta: "بۆنی خۆت بدۆزەرەوە", footerLine: "بۆن، بە شێوەیەک هەڵبژێردراوە کە لەگەڵ تۆ بگونجێت.",
-    copyright: "Maya Collection · هەولێر، عێراق", waItem: "سڵاو Maya Collection، دەمەوێت ئەم بۆنانە داوا بکەم:",
+    copyright: "Maya Collection · سلێمانی، عێراق", waItem: "سڵاو Maya Collection، دەمەوێت ئەم بۆنانە داوا بکەم:",
     freeDelivery: "گەیاندنی خۆڕایی بۆ داواکاری زیاتر لە $150",
   },
   ar: {
@@ -116,7 +115,7 @@ const COPY = {
     noteHeartTitle: "الشخصية الحقيقية", noteHeartText: "ينفتح القلب بهدوء ليكشف عن شخصية العطر في جوهره.",
     noteBaseTitle: "ما يبقى", noteBaseText: "تستقر النفحات الدافئة والثابتة على البشرة وتترك أثراً جميلاً.",
     closingEyebrow: "ذكراك القادمة", closingTitle: "دع العطر يجدك.", closingCta: "اعثر على عطرك",
-    footerLine: "عطر مختار ليشبهك.", copyright: "Maya Collection · أربيل، العراق",
+    footerLine: "عطر مختار ليشبهك.", copyright: "Maya Collection · السليمانية، العراق",
     waItem: "مرحباً Maya Collection، أود طلب:",
     freeDelivery: "توصيل مجاني للطلبات التي تتجاوز $150",
   },
@@ -285,7 +284,7 @@ function Index() {
       </header>
 
       <section className="hero" id="home" aria-labelledby="hero-title">
-        <img className="hero-art" src={hero} alt="A golden perfume bottle glowing in forest-green light" />
+        <img className="hero-art" src="/images/maya-hero.jpg" alt="A dark emerald perfume bottle with a gold crown stopper beside its presentation box" />
         <div className="hero-copy">
           <div className="hero-kicker eyebrow reveal">{t.kicker}</div>
           <h1 id="hero-title" className="serif reveal delay-1">{language === "en" ? <>Discover Your<br /><em>Signature Scent</em></> : <>{t.headlineA}<br /><em>{t.headlineB}</em></>}</h1>

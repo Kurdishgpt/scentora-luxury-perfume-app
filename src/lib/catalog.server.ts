@@ -1,6 +1,4 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db";
-import { mayaStoreState } from "../../db/schema";
 import { normalizeCatalogImages } from "./catalog-images";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
@@ -66,7 +64,39 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
   },
 ];
 
+let didWarnAboutPreviewCatalog = false;
+
+async function getStoreDatabase() {
+  if (!process.env["NETLIFY_DB_URL"]) {
+    throw new Error("NETLIFY_DB_URL is required to read or save the persistent Maya Collection catalog.");
+  }
+  const [{ db }, { mayaStoreState }] = await Promise.all([
+    import("../../db"),
+    import("../../db/schema"),
+  ]);
+  return { db, mayaStoreState };
+}
+
+function getDefaultCatalog(): StorefrontCatalog {
+  return normalizeCatalogImages({
+    products: DEFAULT_PRODUCTS,
+    categories: DEFAULT_CATEGORIES,
+    whatsappNumber: "9647701575609",
+  });
+}
+
 export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
+  if (!process.env["NETLIFY_DB_URL"] && process.env["NODE_ENV"] === "development") {
+    if (!didWarnAboutPreviewCatalog) {
+      console.warn(
+        "NETLIFY_DB_URL is not configured; showing the built-in sample catalog in this local preview. Catalog edits will not persist.",
+      );
+      didWarnAboutPreviewCatalog = true;
+    }
+    return getDefaultCatalog();
+  }
+
+  const { db, mayaStoreState } = await getStoreDatabase();
   const [existing] = await db.select().from(mayaStoreState).where(eq(mayaStoreState.singleton, true));
 
   if (existing) {
@@ -77,11 +107,7 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
     });
   }
 
-  const defaults = {
-    products: DEFAULT_PRODUCTS,
-    categories: DEFAULT_CATEGORIES,
-    whatsappNumber: "9647701575609",
-  };
+  const defaults = getDefaultCatalog();
   const [row] = await db
     .insert(mayaStoreState)
     .values({ singleton: true, ...defaults })
@@ -92,6 +118,7 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
 }
 
 export async function saveStorefrontCatalog(catalog: StorefrontCatalog) {
+  const { db, mayaStoreState } = await getStoreDatabase();
   const { products, categories, whatsappNumber } = normalizeCatalogImages(catalog);
   await db
     .insert(mayaStoreState)
