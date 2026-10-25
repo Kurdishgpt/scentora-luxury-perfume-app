@@ -1,4 +1,6 @@
-import { Pool } from "pg";
+import { eq } from "drizzle-orm";
+import { db } from "../../db";
+import { mayaStoreState } from "../../db/schema";
 import { normalizeCatalogImages } from "./catalog-images";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
@@ -64,30 +66,14 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
   },
 ];
 
-let pool: Pool | undefined;
-
-function getPool() {
-  const connectionString = process.env["DATABASE_URL"];
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is missing. Configure a persistent PostgreSQL database for this deployment.");
-  }
-  pool ??= new Pool({ connectionString, max: 5, idleTimeoutMillis: 30_000 });
-  return pool;
-}
-
 export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
-  const db = getPool();
-  const result = await db.query<{
-    products: CatalogProduct[];
-    categories: CatalogCategory[];
-    whatsapp_number: string;
-  }>("SELECT products, categories, whatsapp_number FROM maya_store_state WHERE singleton = TRUE");
+  const [existing] = await db.select().from(mayaStoreState).where(eq(mayaStoreState.singleton, true));
 
-  if (result.rows[0]) {
+  if (existing) {
     return normalizeCatalogImages({
-      products: result.rows[0].products,
-      categories: result.rows[0].categories,
-      whatsappNumber: result.rows[0].whatsapp_number,
+      products: existing.products,
+      categories: existing.categories,
+      whatsappNumber: existing.whatsappNumber,
     });
   }
 
@@ -96,39 +82,24 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
     categories: DEFAULT_CATEGORIES,
     whatsappNumber: "9647701575609",
   };
-  const inserted = await db.query<{
-    products: CatalogProduct[];
-    categories: CatalogCategory[];
-    whatsapp_number: string;
-  }>(
-    `INSERT INTO maya_store_state (singleton, products, categories, whatsapp_number)
-     VALUES (TRUE, $1::jsonb, $2::jsonb, $3)
-     ON CONFLICT (singleton) DO UPDATE SET singleton = TRUE
-     RETURNING products, categories, whatsapp_number`,
-    [JSON.stringify(defaults.products), JSON.stringify(defaults.categories), defaults.whatsappNumber],
-  );
-  const row = inserted.rows[0];
+  const [row] = await db
+    .insert(mayaStoreState)
+    .values({ singleton: true, ...defaults })
+    .onConflictDoUpdate({ target: mayaStoreState.singleton, set: { singleton: true } })
+    .returning();
   if (!row) throw new Error("Could not initialize store data.");
-  return { products: row.products, categories: row.categories, whatsappNumber: row.whatsapp_number };
+  return { products: row.products, categories: row.categories, whatsappNumber: row.whatsappNumber };
 }
 
 export async function saveStorefrontCatalog(catalog: StorefrontCatalog) {
-  const db = getPool();
-  const normalizedCatalog = normalizeCatalogImages(catalog);
-  await db.query(
-    `INSERT INTO maya_store_state (singleton, products, categories, whatsapp_number)
-     VALUES (TRUE, $1::jsonb, $2::jsonb, $3)
-     ON CONFLICT (singleton) DO UPDATE
-     SET products = EXCLUDED.products,
-         categories = EXCLUDED.categories,
-         whatsapp_number = EXCLUDED.whatsapp_number,
-         updated_at = NOW()`,
-    [
-      JSON.stringify(normalizedCatalog.products),
-      JSON.stringify(normalizedCatalog.categories),
-      normalizedCatalog.whatsappNumber,
-    ],
-  );
+  const { products, categories, whatsappNumber } = normalizeCatalogImages(catalog);
+  await db
+    .insert(mayaStoreState)
+    .values({ singleton: true, products, categories, whatsappNumber })
+    .onConflictDoUpdate({
+      target: mayaStoreState.singleton,
+      set: { products, categories, whatsappNumber, updatedAt: new Date() },
+    });
 }
 
 export async function createProduct(product: CatalogProduct) {
