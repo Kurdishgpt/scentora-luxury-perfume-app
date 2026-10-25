@@ -135,13 +135,7 @@ function whatsappHref(number: string, message = "") {
 }
 
 function LogoMark() {
-  return (
-    <svg className="brand-mark" viewBox="0 0 36 42" fill="none" aria-hidden="true">
-      <path d="M18 2.5 31.5 10v15.5L18 40 4.5 25.5V10L18 2.5Z" stroke="currentColor" strokeWidth="1.15" />
-      <path d="M12 28V14l6 8 6-8v14M18 3v8" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="18" cy="11" r="1.6" fill="currentColor" />
-    </svg>
-  );
+  return <img className="brand-mark" src="/images/maya-logo.png" alt="" width={36} height={36} aria-hidden="true" />;
 }
 
 function Rating({ value, reviews }: { value: number; reviews: number }) {
@@ -534,7 +528,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Maya Collection — Discover Your Signature Scent" },
-      { name: "description", content: "Discover rare, characterful fragrances at Maya Collection. Find the scent that feels like it has always been yours." },
+      { name: "description", content: "Maya Collection — luxury perfumes and fragrances. Discover rare, characterful scents and find the fragrance that feels like it has always been yours." },
       { property: "og:title", content: "Maya Collection — Discover Your Signature Scent" },
       { property: "og:description", content: "Rare compositions. A little ceremony. Find your signature scent." },
       { property: "og:type", content: "website" },
