@@ -9,15 +9,30 @@ type LegacyCatalogRow = {
   updated_at: Date | string;
 };
 
+function isConnectionUrl(value: string, protocols: string[]) {
+  try {
+    const url = new URL(value);
+    return protocols.includes(url.protocol) && Boolean(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 async function migrateCatalog() {
   const legacyConnectionString = process.env.NETLIFY_DB_URL;
   if (!legacyConnectionString) {
     throw new Error("NETLIFY_DB_URL is required only for this one-time legacy catalog import.");
   }
+  if (!isConnectionUrl(legacyConnectionString, ["postgres:", "postgresql:"])) {
+    throw new Error("NETLIFY_DB_URL must be a valid PostgreSQL connection URL. No data was changed.");
+  }
 
   const mongoConfig = resolveMongoConfig();
   if (!mongoConfig) {
     throw new Error("MONGODB_URI is required to import the catalog into MongoDB.");
+  }
+  if (!isConnectionUrl(mongoConfig.uri, ["mongodb:", "mongodb+srv:"])) {
+    throw new Error("MONGODB_URI must be a valid MongoDB connection URL. No data was changed.");
   }
 
   const query = neon(legacyConnectionString);
@@ -69,6 +84,14 @@ async function migrateCatalog() {
 }
 
 void migrateCatalog().catch((error: unknown) => {
-  console.error(error);
+  const message = error instanceof Error ? error.message : "Unknown error";
+  const secrets = [process.env.NETLIFY_DB_URL, process.env.MONGODB_URI].filter(
+    (secret): secret is string => Boolean(secret),
+  );
+  const safeMessage = secrets.reduce(
+    (result, secret) => result.replaceAll(secret, "[redacted]"),
+    message,
+  );
+  console.error(`Catalog migration failed: ${safeMessage}`);
   process.exitCode = 1;
 });
