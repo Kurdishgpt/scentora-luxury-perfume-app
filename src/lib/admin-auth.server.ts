@@ -24,7 +24,7 @@ async function getAdminSession() {
 
 async function matchesConfiguredPassword(candidate: string) {
   const configuredPassword = process.env["ADMIN_PASSWORD"];
-  if (!configuredPassword) throw new Error("ADMIN_PASSWORD is not configured in Replit Secrets.");
+  if (!configuredPassword) throw new Error("ADMIN_PASSWORD is not configured. Add it in Netlify environment variables and redeploy.");
   const encoder = new TextEncoder();
   const [expected, actual] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(configuredPassword)),
