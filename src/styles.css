@@ -152,6 +152,9 @@ a { color: inherit; }
 .product-info { padding: 19px 20px 21px; }
 .product-title-row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .product-title { margin: 0; font-weight: 500; font-size: 1.7rem; line-height: 1; }
+.product-title-button { margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; line-height: inherit; text-align: start; cursor: pointer; }
+.product-title-button:hover { color: var(--gold-soft); }
+.product-title-button:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
 .product-price { color: var(--gold-soft); font-size: .94rem; white-space: nowrap; }
 .product-subtitle { margin: 8px 0 13px; color: #aeb8aa; font-size: .72rem; letter-spacing: .03em; }
 .rating-line { display: flex; align-items: center; gap: 7px; color: #ddc994; font-size: .68rem; }

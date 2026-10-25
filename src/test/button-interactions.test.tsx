@@ -23,6 +23,10 @@ describe("interactive buttons", () => {
   it("opens product details, adds to the bag, and updates/removes cart items", async () => {
     await renderAt("/");
 
+    fireEvent.click(await screen.findByRole("button", { name: "Oud Wood" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Woody · Spicy");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
     fireEvent.click(await screen.findByRole("button", { name: "Discover fragrance: Oud Wood" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("Woody · Spicy");
     fireEvent.click(screen.getByRole("button", { name: /^Add to bag$/ }));

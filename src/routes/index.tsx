@@ -352,7 +352,19 @@ function Index() {
                     <div className="image-caption"><span>EAU DE PARFUM</span><span>NO. {String(products.indexOf(product) + 1).padStart(2, "0")}</span></div>
                   </div>
                   <div className="product-info">
-                    <div className="product-title-row"><h3 className="serif product-title">{product.name}</h3><span className="product-price">{formatMoney(getPrice(product, size))}</span></div>
+                    <div className="product-title-row">
+                      <h3 className="serif product-title">
+                        <button
+                          className="product-title-button"
+                          type="button"
+                          aria-label={product.name}
+                          onClick={() => setDetailId(product.id)}
+                        >
+                          {product.name}
+                        </button>
+                      </h3>
+                      <span className="product-price">{formatMoney(getPrice(product, size))}</span>
+                    </div>
                     <p className="product-subtitle">{product.subtitle}</p>
                     <Rating value={product.rating} reviews={product.reviews} />
                     <div className="product-foot">

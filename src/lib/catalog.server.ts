@@ -1,7 +1,5 @@
 import { Pool } from "pg";
-import oud from "@/assets/oud-wood.jpg";
-import rose from "@/assets/rosewater.jpg";
-import amber from "@/assets/hero-bottle.jpg";
+import { normalizeCatalogImages } from "./catalog-images";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
 const DEFAULT_CATEGORIES: CatalogCategory[] = ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"];
@@ -11,7 +9,7 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     id: "oud",
     name: "Oud Wood",
     brand: "Maya Collection",
-    image: oud,
+    image: "/images/oud-wood.jpg",
     subtitle: "Smoky woods · quiet confidence",
     categories: ["Woody", "Spicy"],
     sizes: [{ volume: 30, price: 45 }, { volume: 50, price: 88 }, { volume: 100, price: 145 }],
@@ -30,7 +28,7 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     id: "rose",
     name: "Rosewater",
     brand: "Maya Collection",
-    image: rose,
+    image: "/images/rosewater.jpg",
     subtitle: "Petal-soft · luminous",
     categories: ["Floral", "Fresh", "Citrus"],
     sizes: [{ volume: 30, price: 38 }, { volume: 50, price: 74 }, { volume: 100, price: 126 }],
@@ -49,7 +47,7 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
     id: "amber",
     name: "Amber Royal",
     brand: "Maya Collection",
-    image: amber,
+    image: "/images/hero-bottle.jpg",
     subtitle: "Golden amber · velvet spice",
     categories: ["Oriental", "Spicy", "Citrus"],
     sizes: [{ volume: 30, price: 52 }, { volume: 50, price: 102 }, { volume: 100, price: 168 }],
@@ -71,7 +69,7 @@ let pool: Pool | undefined;
 function getPool() {
   const connectionString = process.env["DATABASE_URL"];
   if (!connectionString) {
-    throw new Error("The database is not configured. Add the Replit database to this app before saving store data.");
+    throw new Error("DATABASE_URL is missing. Configure a persistent PostgreSQL database for this deployment.");
   }
   pool ??= new Pool({ connectionString, max: 5, idleTimeoutMillis: 30_000 });
   return pool;
@@ -86,11 +84,11 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
   }>("SELECT products, categories, whatsapp_number FROM maya_store_state WHERE singleton = TRUE");
 
   if (result.rows[0]) {
-    return {
+    return normalizeCatalogImages({
       products: result.rows[0].products,
       categories: result.rows[0].categories,
       whatsappNumber: result.rows[0].whatsapp_number,
-    };
+    });
   }
 
   const defaults = {
@@ -116,6 +114,7 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
 
 export async function saveStorefrontCatalog(catalog: StorefrontCatalog) {
   const db = getPool();
+  const normalizedCatalog = normalizeCatalogImages(catalog);
   await db.query(
     `INSERT INTO maya_store_state (singleton, products, categories, whatsapp_number)
      VALUES (TRUE, $1::jsonb, $2::jsonb, $3)
@@ -124,7 +123,11 @@ export async function saveStorefrontCatalog(catalog: StorefrontCatalog) {
          categories = EXCLUDED.categories,
          whatsapp_number = EXCLUDED.whatsapp_number,
          updated_at = NOW()`,
-    [JSON.stringify(catalog.products), JSON.stringify(catalog.categories), catalog.whatsappNumber],
+    [
+      JSON.stringify(normalizedCatalog.products),
+      JSON.stringify(normalizedCatalog.categories),
+      normalizedCatalog.whatsappNumber,
+    ],
   );
 }
 
