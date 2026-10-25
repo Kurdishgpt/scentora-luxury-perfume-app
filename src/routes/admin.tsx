@@ -6,7 +6,7 @@ import { getAdminCatalogFn, getAdminSessionFn } from "@/lib/catalog.functions";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Scentora Admin — Store Management" },
+      { title: "Maya Collection Admin — Store Management" },
       { name: "description", content: "Manage products, stock, categories, and store contact details." },
     ],
   }),
