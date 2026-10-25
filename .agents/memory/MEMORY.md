@@ -1,5 +1,5 @@
 - [Zod 3 derived schemas](zod-derived-schemas.md) — derive `.pick()`/`.omit()` variants before `.refine()`, then reapply shared refinements.
 - [Portable package locks](portable-package-locks.md) — inspect resolved hosts; rewrite only private mirrors for public packages, preserving versions and integrity.
-- [Netlify and Vercel databases](netlify-production-setup.md) — preserve Netlify's database path; use a Vercel Postgres URL only on Vercel, never Replit's local URL.
+- [Hosted database setup](netlify-production-setup.md) — preserve Netlify's path and use Neon-compatible Postgres URLs only on Vercel or Cloudflare, never Replit's local URL.
 - [Stable catalog image URLs](catalog-image-paths.md) — persisted product images must use stable public paths, not Vite development or build-hash URLs.
 - [Storefront location](storefront-location.md) — Maya Collection’s listed location is Sulaymani, Iraq, localized in Kurdish and Arabic.

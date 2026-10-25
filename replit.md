@@ -37,3 +37,13 @@ published Git history or replace the existing stack for routine changes.
   prefix. A new Vercel database needs the existing SQL migration applied and
   catalog data migrated separately; connecting a new database does not copy the
   current catalog.
+
+## Cloudflare Workers and Pages
+
+- The production build targets Nitro's Cloudflare Worker runtime.
+- Configure `POSTGRES_URL` (or `DATABASE_URL` for a Neon-compatible Postgres
+  connection), `ADMIN_PASSWORD`, and `SESSION_SECRET` as server-side Worker
+  variables/secrets. Do not add these with a `VITE_` prefix.
+- Keep using the existing database if it is reachable from Cloudflare; a new
+  database needs the existing SQL migration and catalog data transferred
+  separately.

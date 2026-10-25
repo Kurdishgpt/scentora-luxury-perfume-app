@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
 import { normalizeCatalogImages } from "./catalog-images";
-import { isVercelRuntime, resolveCatalogDatabaseConfig } from "./database-config.server";
+import {
+  isCloudflareRuntime,
+  isVercelRuntime,
+  resolveCatalogDatabaseConfig,
+} from "./database-config.server";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
 const DEFAULT_CATEGORIES: CatalogCategory[] = ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"];
@@ -75,8 +79,13 @@ async function getStoreDatabase() {
         "POSTGRES_URL (or DATABASE_URL) is required in Vercel to read or save the persistent Maya Collection catalog.",
       );
     }
+    if (isCloudflareRuntime()) {
+      throw new Error(
+        "POSTGRES_URL (or DATABASE_URL) is required in Cloudflare to read or save the persistent Maya Collection catalog.",
+      );
+    }
     throw new Error(
-      "NETLIFY_DB_URL is required to read or save the persistent Maya Collection catalog.",
+      "NETLIFY_DB_URL is required on Netlify, or POSTGRES_URL (or DATABASE_URL) on Vercel or Cloudflare, to read or save the persistent Maya Collection catalog.",
     );
   }
 
@@ -84,8 +93,8 @@ async function getStoreDatabase() {
     import("../../db/schema"),
     config.provider === "netlify"
       ? import("../../db").then(({ db }) => db)
-      : import("../../db/vercel").then(({ createVercelDatabase }) =>
-          createVercelDatabase(config.connectionString),
+      : import("../../db/neon").then(({ createNeonDatabase }) =>
+          createNeonDatabase(config.connectionString),
         ),
   ]);
   return { db: database, mayaStoreState };
