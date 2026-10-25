@@ -73,26 +73,48 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+const SITE_URL = "https://maya-collections.com";
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Maya Collection — Perfumes & Fragrances" },
+      { name: "description", content: "Maya Collection — luxury perfumes and fragrances. Discover your signature scent." },
+      { name: "author", content: "Maya Collection" },
+      { name: "theme-color", content: "#1f7a6e" },
+      { property: "og:site_name", content: "Maya Collection" },
+      { property: "og:title", content: "Maya Collection — Perfumes & Fragrances" },
+      { property: "og:description", content: "Luxury perfumes and fragrances. Discover your signature scent." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: `${SITE_URL}/` },
+      { property: "og:image", content: `${SITE_URL}/images/og-logo.jpg` },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:image", content: `${SITE_URL}/images/og-logo.jpg` },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      { rel: "icon", href: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "manifest", href: "/site.webmanifest" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            { "@type": "Organization", name: "Maya Collection", url: `${SITE_URL}/`, logo: `${SITE_URL}/icon-512.png` },
+            { "@type": "WebSite", name: "Maya Collection", url: `${SITE_URL}/` },
+          ],
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,
