@@ -3,8 +3,8 @@ name: Portable package lockfiles
 description: Check resolved package tarball hosts when installations fail only in external CI.
 ---
 
-Inspect the lockfile's resolved tarball URLs when an external deployment runner reports package download failures, even if the package manifest and lockfile are present. A Bun lockfile generated in this environment may record Replit-private package-firewall URLs; external CI cannot resolve those hosts. Replace only inaccessible tarball hosts with the corresponding public registry URLs when the packages are publicly available, keeping versions and integrity hashes unchanged.
+Inspect the exact resolved tarball URL when an external deployment runner reports package download failures; do not infer a missing package from a connection error. If a public package resolves through `package-firewall.replit.internal`, change only that host to `https://registry.npmjs.org/`, preserving the package path, version, and integrity hash. Do not rewrite other hosts unless their reachability is verified.
 
-**Why:** Netlify could not fetch PostgreSQL packages because their locked tarball URLs used Replit's private package firewall, not because the dependencies were absent.
+**Why:** Replit-generated Bun locks can contain private firewall URLs that external runners cannot resolve. In this project, the committed `pg` entries already pointed at npmjs.org, so their `ConnectionRefused` errors were not evidence of missing dependencies or private `pg` URLs.
 
-**How to apply:** For external CI install failures, compare failed package URLs in the lockfile to the runner's reachable registries before attributing the failure to a transient network issue.
+**How to apply:** Compare failed package URLs with lockfile entries first; repair only confirmed private hosts, then retry a runner-side registry failure after a cache-cleared deploy.

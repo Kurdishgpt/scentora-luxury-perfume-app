@@ -1,3 +1,4 @@
 - [Zod 3 derived schemas](zod-derived-schemas.md) — derive `.pick()`/`.omit()` variants before `.refine()`, then reapply shared refinements.
-- [Portable package locks](portable-package-locks.md) — external CI cannot fetch dependencies from Replit-private tarball URLs embedded in Bun lockfiles.
-- [Vercel production setup](vercel-production-setup.md) — use a separate production PostgreSQL database, keep admin credentials server-side, and prefer `e-app.vercel.app` if attachable.
+- [Portable package locks](portable-package-locks.md) — inspect resolved hosts; rewrite only private mirrors for public packages, preserving versions and integrity.
+- [Netlify production setup](netlify-production-setup.md) — use separate production PostgreSQL and keep admin credentials server-side in Netlify settings.
+- [Stable catalog image URLs](catalog-image-paths.md) — persisted product images must use stable public paths, not Vite development or build-hash URLs.
