@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { normalizeCatalogImages } from "./catalog-images";
+import { isVercelRuntime, resolveCatalogDatabaseConfig } from "./database-config.server";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
 const DEFAULT_CATEGORIES: CatalogCategory[] = ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"];
@@ -67,14 +68,27 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
 let didWarnAboutPreviewCatalog = false;
 
 async function getStoreDatabase() {
-  if (!process.env["NETLIFY_DB_URL"]) {
-    throw new Error("NETLIFY_DB_URL is required to read or save the persistent Maya Collection catalog.");
+  const config = resolveCatalogDatabaseConfig();
+  if (!config) {
+    if (isVercelRuntime()) {
+      throw new Error(
+        "POSTGRES_URL (or DATABASE_URL) is required in Vercel to read or save the persistent Maya Collection catalog.",
+      );
+    }
+    throw new Error(
+      "NETLIFY_DB_URL is required to read or save the persistent Maya Collection catalog.",
+    );
   }
-  const [{ db }, { mayaStoreState }] = await Promise.all([
-    import("../../db"),
+
+  const [{ mayaStoreState }, database] = await Promise.all([
     import("../../db/schema"),
+    config.provider === "netlify"
+      ? import("../../db").then(({ db }) => db)
+      : import("../../db/vercel").then(({ createVercelDatabase }) =>
+          createVercelDatabase(config.connectionString),
+        ),
   ]);
-  return { db, mayaStoreState };
+  return { db: database, mayaStoreState };
 }
 
 function getDefaultCatalog(): StorefrontCatalog {
@@ -86,7 +100,7 @@ function getDefaultCatalog(): StorefrontCatalog {
 }
 
 export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
-  if (!process.env["NETLIFY_DB_URL"] && process.env["NODE_ENV"] === "development") {
+  if (!resolveCatalogDatabaseConfig() && process.env["NODE_ENV"] === "development") {
     if (!didWarnAboutPreviewCatalog) {
       console.warn(
         "NETLIFY_DB_URL is not configured; showing the built-in sample catalog in this local preview. Catalog edits will not persist.",

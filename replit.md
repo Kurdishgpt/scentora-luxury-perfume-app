@@ -25,3 +25,15 @@ without first checking its schema and confirming any required changes.
 
 The repository remains connected to Lovable. Follow `AGENTS.md`; do not rewrite
 published Git history or replace the existing stack for routine changes.
+
+## Vercel
+
+- Vercel builds use Nitro's detected Vercel preset and emit `.vercel/output`.
+- The existing Netlify deployment continues to use `NETLIFY_DB_URL`. On Vercel,
+  the catalog uses `POSTGRES_URL` (or `DATABASE_URL`) with the Neon serverless
+  driver; Vercel's `DATABASE_URL` is not selected during Replit development.
+- Add `POSTGRES_URL`, `ADMIN_PASSWORD`, and `SESSION_SECRET` to the Vercel
+  project's server-side environment variables. Never expose them with a `VITE_`
+  prefix. A new Vercel database needs the existing SQL migration applied and
+  catalog data migrated separately; connecting a new database does not copy the
+  current catalog.

@@ -1,10 +1,10 @@
 ---
-name: Netlify production setup
-description: Production database and admin credential requirements for the storefront's current Netlify deployment target.
+name: Netlify and Vercel database setup
+description: Keep the existing Netlify database working while enabling a separate Vercel Postgres connection.
 ---
 
-The current deployment target is Netlify. Use a separate persistent production PostgreSQL database rather than the Replit development database. Keep the admin password and session secret server-side in Netlify environment settings; never hard-code them or persist them in browser storage.
+The storefront supports both database paths: Netlify uses `NETLIFY_DB_URL`; Vercel uses a Neon-compatible `POSTGRES_URL` (or `DATABASE_URL`) with the Neon serverless driver. Only select generic Postgres variables when the runtime is Vercel, so Replit's own `DATABASE_URL` is never mistaken for the storefront's production database.
 
-**Why:** The user chose a separate production database and server-side admin credential handling, then switched the deployment target from Vercel to Netlify.
+**Why:** The user asked to make the existing Netlify-backed store work on Vercel too. The catalog and admin changes need durable PostgreSQL storage, and a new Vercel database does not automatically contain existing catalog data.
 
-**How to apply:** Configure `DATABASE_URL`, `ADMIN_PASSWORD`, and `SESSION_SECRET` in Netlify before deploying. A local or function-filesystem database is not durable for catalog edits.
+**How to apply:** Keep `NETLIFY_DB_URL` for Netlify. On Vercel, set `POSTGRES_URL`, `ADMIN_PASSWORD`, and `SESSION_SECRET` as server-side environment variables. If using a new database, apply the existing SQL migration and transfer catalog data explicitly; do not silently switch to Replit's database.
