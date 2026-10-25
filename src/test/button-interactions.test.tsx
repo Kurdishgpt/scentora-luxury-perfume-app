@@ -19,9 +19,15 @@ async function renderAt(path: string) {
   return render(<RouterProvider router={router} />);
 }
 
+async function switchStorefrontToEnglish() {
+  fireEvent.click(await screen.findByRole("button", { name: "گۆڕینی زمان بۆ عەرەبی" }));
+  fireEvent.click(screen.getByRole("button", { name: "التبديل إلى الإنجليزية" }));
+}
+
 describe("interactive buttons", () => {
   it("opens product details, adds to the bag, and updates/removes cart items", async () => {
     await renderAt("/");
+    await switchStorefrontToEnglish();
 
     fireEvent.click(await screen.findByRole("button", { name: "Oud Wood" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("Woody · Spicy");
@@ -42,6 +48,9 @@ describe("interactive buttons", () => {
 
   it("filters products and cycles the language control", async () => {
     await renderAt("/");
+    expect(await screen.findByRole("main")).toHaveAttribute("lang", "ckb");
+    await switchStorefrontToEnglish();
+    expect(screen.getByRole("main")).toHaveAttribute("lang", "en");
 
     fireEvent.click(await screen.findByRole("button", { name: "Floral" }));
     expect(
@@ -52,9 +61,9 @@ describe("interactive buttons", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Switch language to Kurdish, then Arabic" }),
+      screen.getByRole("button", { name: "Switch language to Kurdish" }),
     );
-    expect(screen.getByRole("main")).toHaveAttribute("lang", "ku");
+    expect(screen.getByRole("main")).toHaveAttribute("lang", "ckb");
   });
 
   it("saves product and inventory changes from the admin panel", async () => {
