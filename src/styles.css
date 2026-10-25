@@ -57,7 +57,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 a { color: inherit; }
 ::selection { background: rgba(201, 169, 109, .35); color: #fff8e8; }
 
-.site-shell { min-height: 100dvh; overflow: hidden; background: radial-gradient(ellipse at 82% 4%, rgba(114, 104, 52, .16), transparent 32%), var(--background); }
+.site-shell { min-height: 100dvh; overflow: hidden; background: linear-gradient(rgba(7,31,41,.55), rgba(7,31,41,.7)), url("/images/site-bg.jpg") center / cover fixed, var(--background); }
 .serif { font-family: "Cormorant Garamond", "Noto Sans Arabic", Georgia, serif; }
 .arabic { font-family: "Noto Sans Arabic", sans-serif; }
 .gold-text { color: var(--gold-soft); }

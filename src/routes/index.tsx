@@ -54,7 +54,7 @@ const COPY = {
     noteHeartTitle: "The true character", noteHeartText: "The heart opens slowly, revealing the personality at the centre of the scent.",
     noteBaseTitle: "What remains", noteBaseText: "Warm, lasting accords settle into the skin and leave a beautiful trace.",
     closingEyebrow: "Your next memory", closingTitle: "Let scent find you.", closingCta: "Find your fragrance",
-    footerLine: "Fragrance, chosen to feel like you.", copyright: "Maya Collection · Erbil, Iraq",
+    footerLine: "Fragrance, chosen to feel like you.", copyright: "Maya Collection · Sulaymaniyah, Iraq",
     waItem: "Hello Maya Collection, I would like to order:",
     freeDelivery: "Complimentary delivery on orders over $150",
   },
