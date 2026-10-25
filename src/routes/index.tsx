@@ -156,7 +156,7 @@ function Rating({ value, reviews }: { value: number; reviews: number }) {
 function Index() {
   const { products, categories, whatsappNumber } = Route.useLoaderData();
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>("ku");
   const [category, setCategory] = useState<string | "All">("All");
   const [query, setQuery] = useState("");
   const [favouritesOnly, setFavouritesOnly] = useState(false);
@@ -252,7 +252,7 @@ function Index() {
   };
 
   return (
-    <main className={`site-shell${isRtl ? " arabic" : ""}`} dir={isRtl ? "rtl" : "ltr"} lang={language}>
+    <main className={`site-shell${isRtl ? " arabic" : ""}`} dir={isRtl ? "rtl" : "ltr"} lang={language === "ku" ? "ckb" : language}>
       <header className="topbar">
         <a className="brand-lockup" href="#home" aria-label="Maya Collection home">
           <LogoMark /><span className="serif brand-name">Maya Collection</span>
@@ -278,9 +278,9 @@ function Index() {
           <button className="icon-button" type="button" aria-label={t.admin} title={t.admin} onClick={() => setAdminLoginOpen(true)}>
             <Settings2 size={18} strokeWidth={1.5} />
           </button>
-          <button className="lang-toggle" type="button" onClick={() => setLanguage(language === "en" ? "ku" : language === "ku" ? "ar" : "en")}
-            aria-label={language === "en" ? "Switch language to Kurdish, then Arabic" : language === "ku" ? "گۆڕینی زمان بۆ عەرەبی" : "التبديل إلى الإنجليزية"}
-            title="English · کوردی · العربية">{language === "en" ? "کوردی · العربية" : language === "ku" ? "العربية" : "EN · کوردی"}</button>
+          <button className="lang-toggle" type="button" onClick={() => setLanguage(language === "ku" ? "ar" : language === "ar" ? "en" : "ku")}
+            aria-label={language === "ku" ? "گۆڕینی زمان بۆ عەرەبی" : language === "ar" ? "التبديل إلى الإنجليزية" : "Switch language to Kurdish"}
+            title="کوردی · العربية · English">{language === "ku" ? "العربية · EN" : language === "ar" ? "EN · کوردی" : "کوردی"}</button>
         </div>
       </header>
 
