@@ -284,7 +284,7 @@ function Index() {
       </header>
 
       <section className="hero" id="home" aria-labelledby="hero-title">
-        <img className="hero-art" src="/images/maya-hero.jpg" alt="A dark emerald perfume bottle with a gold crown stopper beside its presentation box" />
+        <img className="hero-art" src="/images/maya-hero-branded.jpg" alt="Maya Collection emerald perfume bottle with a gold crown stopper beside its presentation box" />
         <div className="hero-copy">
           <div className="hero-kicker eyebrow reveal">{t.kicker}</div>
           <h1 id="hero-title" className="serif reveal delay-1">{language === "en" ? <>Discover Your<br /><em>Signature Scent</em></> : <>{t.headlineA}<br /><em>{t.headlineB}</em></>}</h1>
