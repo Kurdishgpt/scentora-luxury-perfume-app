@@ -1,6 +1,6 @@
-import { MongoClient, type Collection } from "mongodb";
+import type { Collection } from "mongodb";
 import { normalizeCatalogImages } from "./catalog-images";
-import { resolveMongoConfig } from "./mongo-config.server";
+import { prepareMongoDriverRuntime, resolveMongoConfig } from "./mongo-config.server";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
 const DEFAULT_CATEGORIES: CatalogCategory[] = ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"];
@@ -80,6 +80,8 @@ async function withCatalogCollection<T>(
     throw new Error("MONGODB_URI is required to read or save the Maya Collection catalog.");
   }
 
+  prepareMongoDriverRuntime();
+  const { MongoClient } = await import("mongodb");
   const client = new MongoClient(config.uri, {
     maxPoolSize: 1,
     minPoolSize: 0,

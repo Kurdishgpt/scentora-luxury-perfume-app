@@ -6,18 +6,21 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { fileURLToPath } from "node:url";
+import type { LovableViteTanstackOptions } from "@lovable.dev/vite-tanstack-config";
 
 const netlifyPlugins =
   process.env["NETLIFY"] === "true"
     ? [(await import("@netlify/vite-plugin-tanstack-start")).default()]
     : [];
 
-const punycodeEntry = fileURLToPath(new URL("./node_modules/punycode/punycode.js", import.meta.url));
+const punycodeEntry = fileURLToPath(
+  new URL("./node_modules/punycode/punycode.js", import.meta.url),
+);
 const nitroOptions = {
   alias: {
     "punycode/": punycodeEntry,
   },
-};
+} as unknown as NonNullable<LovableViteTanstackOptions["nitro"]>;
 
 export default defineConfig({
   plugins: netlifyPlugins,

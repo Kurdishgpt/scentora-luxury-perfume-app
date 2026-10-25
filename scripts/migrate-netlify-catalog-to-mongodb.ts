@@ -1,6 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { MongoClient } from "mongodb";
-import { resolveMongoConfig } from "../src/lib/mongo-config.server";
+import { prepareMongoDriverRuntime, resolveMongoConfig } from "../src/lib/mongo-config.server";
 import type { CatalogCategory, CatalogProduct } from "../src/lib/catalog-types";
 
 type LegacyCatalogRow = {
@@ -35,6 +34,8 @@ async function migrateCatalog() {
     return;
   }
 
+  prepareMongoDriverRuntime();
+  const { MongoClient } = await import("mongodb");
   const client = new MongoClient(mongoConfig.uri, {
     maxPoolSize: 1,
     minPoolSize: 0,
