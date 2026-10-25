@@ -1,10 +1,6 @@
-import { eq } from "drizzle-orm";
+import { MongoClient, type Collection } from "mongodb";
 import { normalizeCatalogImages } from "./catalog-images";
-import {
-  isCloudflareRuntime,
-  isVercelRuntime,
-  resolveCatalogDatabaseConfig,
-} from "./database-config.server";
+import { resolveMongoConfig } from "./mongo-config.server";
 import type { CatalogCategory, CatalogProduct, StorefrontCatalog } from "./catalog-types";
 
 const DEFAULT_CATEGORIES: CatalogCategory[] = ["Citrus", "Floral", "Woody", "Oriental", "Fresh", "Spicy"];
@@ -71,33 +67,33 @@ const DEFAULT_PRODUCTS: CatalogProduct[] = [
 
 let didWarnAboutPreviewCatalog = false;
 
-async function getStoreDatabase() {
-  const config = resolveCatalogDatabaseConfig();
+type CatalogDocument = StorefrontCatalog & {
+  _id: "singleton";
+  updatedAt?: Date | string;
+};
+
+async function withCatalogCollection<T>(
+  operation: (collection: Collection<CatalogDocument>) => Promise<T>,
+): Promise<T> {
+  const config = resolveMongoConfig();
   if (!config) {
-    if (isVercelRuntime()) {
-      throw new Error(
-        "POSTGRES_URL (or DATABASE_URL) is required in Vercel to read or save the persistent Maya Collection catalog.",
-      );
-    }
-    if (isCloudflareRuntime()) {
-      throw new Error(
-        "POSTGRES_URL (or DATABASE_URL) is required in Cloudflare to read or save the persistent Maya Collection catalog.",
-      );
-    }
-    throw new Error(
-      "NETLIFY_DB_URL is required on Netlify, or POSTGRES_URL (or DATABASE_URL) on Vercel or Cloudflare, to read or save the persistent Maya Collection catalog.",
-    );
+    throw new Error("MONGODB_URI is required to read or save the Maya Collection catalog.");
   }
 
-  const [{ mayaStoreState }, database] = await Promise.all([
-    import("../../db/schema"),
-    config.provider === "netlify"
-      ? import("../../db").then(({ db }) => db)
-      : import("../../db/neon").then(({ createNeonDatabase }) =>
-          createNeonDatabase(config.connectionString),
-        ),
-  ]);
-  return { db: database, mayaStoreState };
+  const client = new MongoClient(config.uri, {
+    maxPoolSize: 1,
+    minPoolSize: 0,
+    maxIdleTimeMS: 20_000,
+    serverSelectionTimeoutMS: 5_000,
+  });
+
+  try {
+    await client.connect();
+    const collection = client.db(config.databaseName).collection<CatalogDocument>("store_state");
+    return await operation(collection);
+  } finally {
+    await client.close();
+  }
 }
 
 function getDefaultCatalog(): StorefrontCatalog {
@@ -109,47 +105,37 @@ function getDefaultCatalog(): StorefrontCatalog {
 }
 
 export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
-  if (!resolveCatalogDatabaseConfig() && process.env["NODE_ENV"] === "development") {
+  if (!resolveMongoConfig() && process.env["NODE_ENV"] === "development") {
     if (!didWarnAboutPreviewCatalog) {
       console.warn(
-        "NETLIFY_DB_URL is not configured; showing the built-in sample catalog in this local preview. Catalog edits will not persist.",
+        "MONGODB_URI is not configured; showing the built-in sample catalog in this local preview. Catalog edits will not persist.",
       );
       didWarnAboutPreviewCatalog = true;
     }
     return getDefaultCatalog();
   }
 
-  const { db, mayaStoreState } = await getStoreDatabase();
-  const [existing] = await db.select().from(mayaStoreState).where(eq(mayaStoreState.singleton, true));
+  return withCatalogCollection(async (collection) => {
+    const existing = await collection.findOne({ _id: "singleton" });
+    if (!existing) return getDefaultCatalog();
 
-  if (existing) {
     return normalizeCatalogImages({
       products: existing.products,
       categories: existing.categories,
       whatsappNumber: existing.whatsappNumber,
     });
-  }
-
-  const defaults = getDefaultCatalog();
-  const [row] = await db
-    .insert(mayaStoreState)
-    .values({ singleton: true, ...defaults })
-    .onConflictDoUpdate({ target: mayaStoreState.singleton, set: { singleton: true } })
-    .returning();
-  if (!row) throw new Error("Could not initialize store data.");
-  return { products: row.products, categories: row.categories, whatsappNumber: row.whatsappNumber };
+  });
 }
 
 export async function saveStorefrontCatalog(catalog: StorefrontCatalog) {
-  const { db, mayaStoreState } = await getStoreDatabase();
   const { products, categories, whatsappNumber } = normalizeCatalogImages(catalog);
-  await db
-    .insert(mayaStoreState)
-    .values({ singleton: true, products, categories, whatsappNumber })
-    .onConflictDoUpdate({
-      target: mayaStoreState.singleton,
-      set: { products, categories, whatsappNumber, updatedAt: new Date() },
-    });
+  await withCatalogCollection((collection) =>
+    collection.updateOne(
+      { _id: "singleton" },
+      { $set: { products, categories, whatsappNumber, updatedAt: new Date() } },
+      { upsert: true },
+    ),
+  );
 }
 
 export async function createProduct(product: CatalogProduct) {
