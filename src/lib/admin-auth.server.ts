@@ -9,11 +9,22 @@ const MAX_LOGIN_ATTEMPTS = 5;
 type AdminSessionData = { isAdmin?: boolean };
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
-async function getAdminSession() {
+async function getSessionSecret() {
   const secret = process.env["SESSION_SECRET"];
-  if (!secret || secret.length < 32) {
-    throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
-  }
+  if (secret && secret.length >= 32) return secret;
+  // Fall back to a key derived from ADMIN_PASSWORD so the admin login works
+  // without a separate SESSION_SECRET. Changing the password signs everyone out.
+  const adminPassword = process.env["ADMIN_PASSWORD"];
+  if (!adminPassword) throw new Error("ADMIN_PASSWORD is not configured.");
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`maya-admin-session:${adminPassword}`),
+  );
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function getAdminSession() {
+  const secret = await getSessionSecret();
   return useSession<AdminSessionData>({
     name: SESSION_NAME,
     password: secret,
@@ -24,7 +35,7 @@ async function getAdminSession() {
 
 async function matchesConfiguredPassword(candidate: string) {
   const configuredPassword = process.env["ADMIN_PASSWORD"];
-  if (!configuredPassword) throw new Error("ADMIN_PASSWORD is not configured in Replit Secrets.");
+  if (!configuredPassword) throw new Error("ADMIN_PASSWORD is not configured.");
   const encoder = new TextEncoder();
   const [expected, actual] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(configuredPassword)),
